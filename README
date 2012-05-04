@@ -1,0 +1,23 @@
+Social.Water -- a python software package to acquire measurements sent
+by citizen-scientists via text messages.
+
+Documentation in Ground Water <REF to come>.
+
+GENERAL USE
+The driver program is src/sw_driver.py
+Customization required is to change the usr and pwd_encoded variables in sw_driver.py
+In social.water.py, the class email_reader.__init__ the list of stations must be customized.
+In social.water.py, the function parsemessages() must be adapted to specific locations.
+Finally, in social.water.py, the function tz_adjust_EST_EDT() must be adapted for correct time zone.
+
+The remaining codes and directory structure must remain as they are. The html and csv files in place are from 
+the CrowdHydrology paper and included as examples - they should all be removed prior to deployment on another
+project.
+
+Contact Mike Fienen < mnfienen (at) usgs [dot] gov >
+
+
+DISCLAIMER and NOTICE
+Please refer to the USGS Software User Rights Notice (http://water.usgs.gov/software/help/notice/) for complete use, copyright, and distribution information. The USGS provides no warranty, expressed or implied, as to the correctness of the furnished software or the suitability for any purpose. The software has been tested, but as with any complex software, there could be undetected errors. Users who find errors are requested to report them to the USGS.
+
+References to non-USGS products, trade names, and (or) services are provided for information purposes only and do not constitute endorsement or warranty, express or implied, by the USGS, U.S. Department of Interior, or U.S. Government, as to their suitability, content, usefulness, functioning, completeness, or accuracy.

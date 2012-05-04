@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=EmulateIE7; IE=EmulateIE9">
+    <!--[if IE]><script src="js/canvas/excanvas.js"></script><![endif]-->
+  </head>
+  <body>
+    <script src="js/graph/dygraph-combined.js" type="text/javascript"></script> 
+      <div id="graphdiv"></div>
+ <script>
+var Final_list = "Date, Gage Height at ny1004\n";
+        Final_list += "08/10/2011 12:41:08,0.48\n";
+        Final_list += "11/01/2011 10:35:09,0.7\n";
+        g = new Dygraph(
+        document.getElementById("graphdiv"),
+        Final_list,
+        {   title: "Hydrograph at ny1004",
+        labelsDivStyles: { 'textAlign': 'right' },
+        showRoller: true,
+        xValueFormatter: Dygraph.dateString_,
+        xTicker: Dygraph.dateTicker,
+        labelsSeparateLines: true,
+        labelsKMB: true,
+        drawXGrid: false,
+         width: 640,
+        height: 300,
+        xlabel: 'Date',
+        ylabel: 'Gage Height (ft.)',
+        strokeWidth: 2,
+        showRangeSelector: true
+        }
+        );
+</script>
+</body>
+</html>
