@@ -131,26 +131,38 @@ class email_reader:
             
             if (('ny' in line) or ('by' in line) or ('my' in line) or ('station' in line)):
                 currmess.is_gage_msg = True
-                # we will test the line, but we need to remove some terms using regex substitutions
-                line = re.sub('(ny)','',line)
-                line = re.sub('(by)','',line)
-                line = re.sub('(my)','',line)
-                line = re.sub('(station)','',line)
-                line = re.sub('(water)','',line)
-                line = re.sub('(level)','',line)
-                line = re.sub('(#)','',line)
-                # now get rid of the floating point values that should be the stage
-                # using regex code from: http://stackoverflow.com/questions/385558/
-                # python-and-regex-question-extract-float-double-value
-                currmess.station_line = line
-                line = re.sub("[+-]? *(?:\d+(?:\.\d*)|\.\d+)(?:[eE][+-]?\d+)?",'', line)
-                
+                matched = False # set a flag to see if a match has been found
+                # now check for the obvious - that the exact station number is in the line
                 for j,cs in enumerate(self.stations):
-                    # get the similarity ratio
-                    crat = fuzz.ratio(line,cs)
-                    if crat > maxratio:
-                        maxratio = crat
+                    # see if there's an exact match first
+                    if cs in line:
+                        currmess.station_line = line
+                        maxratio = 100
                         maxrat_count = j
+                        matched = True
+                        break
+                # if no exact match found, get fuzzy!
+                if matched == False:
+                    # we will test the line, but we need to remove some terms using regex substitutions
+                    line = re.sub('(ny)','',line)
+                    line = re.sub('(by)','',line)
+                    line = re.sub('(my)','',line)
+                    line = re.sub('(station)','',line)
+                    line = re.sub('(water)','',line)
+                    line = re.sub('(level)','',line)
+                    line = re.sub('(#)','',line)
+                    # now get rid of the floating point values that should be the stage
+                    # using regex code from: http://stackoverflow.com/questions/385558/
+                    # python-and-regex-question-extract-float-double-value
+                    currmess.station_line = line
+                    line = re.sub("[+-]? *(?:\d+(?:\.\d*)|\.\d+)(?:[eE][+-]?\d+)?",'', line)
+                    
+                    for j,cs in enumerate(self.stations):
+                        # get the similarity ratio
+                        crat = fuzz.ratio(line,cs)
+                        if crat > maxratio:
+                            maxratio = crat
+                            maxrat_count = j
                 currmess.max_prox_ratio = maxratio    
                 currmess.closest_station_match = maxrat_count
                 
@@ -286,5 +298,5 @@ class SheetConnect(Exception):
     def __init__(self,key):
         self.key=key
     def __str__(self):
-        return('\n\nCannot connect to spreadsheet with key:\n' + self.key)
+        return('\n\nCannot connec to spreadsheet with key:\n' + self.key)
     
