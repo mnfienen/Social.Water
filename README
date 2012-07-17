@@ -1,7 +1,11 @@
 Social.Water -- a python software package to acquire measurements sent
 by citizen-scientists via text messages.
 
-Documentation in Ground Water <REF to come>.
+Documentation:
+Fienen, M.N., and Lowry, C.S., 2012, Social.Water-A crowdsourcing tool for environmental data acquisition, 
+      in press, Computers and Geosciences, doi: 10.1016/j.cageo.2012.06.015.
+Lowry, C. S. and Fienen, M. N., 2012, CrowdHydrology: Crowdsourcing Hydrologic Data and Engaging Citizen Scientists, 
+      Ground Water, online early, doi: 10.1111/j.1745-6584.2012.00956.x.
 
 GENERAL USE
 The driver program is src/sw_driver.py
