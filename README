@@ -1,18 +1,23 @@
 Social.Water -- a python software package to acquire measurements sent
 by citizen-scientists via text messages.
+Version 1.1 --- March 13, 2013
 
 Documentation:
 Fienen, M.N., and Lowry, C.S., 2012, Social.Water-A crowdsourcing tool for environmental data acquisition, 
       in press, Computers and Geosciences, doi: 10.1016/j.cageo.2012.06.015.
-Lowry, C. S. and Fienen, M. N., 2012, CrowdHydrology: Crowdsourcing Hydrologic Data and Engaging Citizen Scientists, 
+Lowry, C. S. and Fienen, M. N., 2013, CrowdHydrology: Crowdsourcing Hydrologic Data and Engaging Citizen Scientists, 
       Ground Water, online early, doi: 10.1111/j.1745-6584.2012.00956.x.
 
 GENERAL USE
 The driver program is src/sw_driver.py
-Customization required is to change the usr and pwd_encoded variables in sw_driver.py
-In social.water.py, the class email_reader.__init__ the list of stations must be customized.
-In social.water.py, the function parsemessages() must be adapted to specific locations.
-Finally, in social.water.py, the function tz_adjust_EST_EDT() must be adapted for correct time zone.
+
+An xml configuration file must be created to provide information about a specific site and related email account.
+The file src/EXAMPLE_social.water.xml shows the format of such a configuration file.
+
+To run the program, navigate to the src directory and run:
+python sw_driver.py EXAMPLE_social.water.xml
+
+The specific name of the xml file is provided as a command line argument as in the above example.
 
 The remaining codes and directory structure must remain as they are. The html and csv files in place are from 
 the CrowdHydrology paper and included as examples - they should all be removed prior to deployment on another

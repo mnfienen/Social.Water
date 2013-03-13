@@ -1,0 +1,47 @@
+<data>
+	<main_account>
+		<usr>{USER}@gmail.com</usr>
+		<!-- the password is here encoded so that it can't be read by looking at this code. Not secure, but obfuscated
+		     to encode a password, in python, import base64 and set password to pwd
+		     then pwd_encoded = base64.b64encode(pwd)
+ 			 place the resulting string in place of '{ENCODED_PWD}' below -->
+		<pwd_encoded>{ENCODED_PWD}</pwd_encoded>
+		<!-- email_scope dictates whether read all or just update using the following options: 
+			 'ALL' means every message
+			 'UNSEEN' means just new unread ones -->
+		<email_scope>ALL</email_scope>
+    </main_account>
+	<tz_offsets>
+		<!-- The following offsets are in hours from UTC for standard and daylight saving time -->
+        <std_time_utc_offset>6    </std_time_utc_offset>
+        <dst_time_utc_offset>5    </dst_time_utc_offset>
+	</tz_offsets>
+	<stations>
+		<!-- for each station, a record in this list is required.
+		    Station number is the value, while lbound and ubound are attributes indicating the 
+		    maximum and minimum range for values-->
+		<station lbound="0.0" ubound="4.0"> NY1000</station>
+		<station lbound="0.0" ubound="4.0"> NY1001</station>
+	</stations>
+	<msg_identifiers>
+		<!-- a keyword must be found within a message to indicate that the message contains
+		     data (as opposed to SPAM, etc.). -->
+		<id>ny</id>
+		<id>my</id>
+		<id>by</id>
+		<id>station</id>
+	</msg_identifiers>
+	<msg_remove_items>
+		<!-- similar to the msg_identifiers, the following text fragments are removed from
+		     messages prior to calculating fuzzy similarity. As discussed in the papers,
+		     this simplifies the text similarity calculations. -->
+		<remitem>ny</remitem>
+		<remitem>my</remitem>
+		<remitem>by</remitem>
+		<remitem>station</remitem>
+		<remitem>water</remitem>
+		<remitem>height</remitem>
+		<remitem>level</remitem>
+		<remitem>#</remitem>
+	</msg_remove_items>
+</data>

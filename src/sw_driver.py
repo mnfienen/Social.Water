@@ -1,30 +1,32 @@
 from social_water import *
 import os
 import base64
-
-usr = '<MYACCOUNT>@gmail.com'
-
-
-# the password is here encoded so that it can't be read by looking at this code. Not secure, but obfuscated
-# to encode a password, in python, import base64 and set password to pwd
-# then pwd_encoded = base64.b64encode(pwd)
-# place the resulting string in place of '<ENCODED_PWD>' below
-pwd_encoded = '<ENCODED_PWD>'
-#email_scope dictates whether read all or just update using the following options:
-#'ALL' means every message, 
-#'UNSEEN' means just new unread ones
-email_scope = 'UNSEEN'
-
+import sys
 print '############################'
 print '#       Social.Water       #'
 print '#    a m!ke@usgs joint     #'
 print '############################'
 print 'Making some initializations'
+
+
+try:
+    parfilename = sys.argv[1]
+except:
+    raise(NoParfileFail())
+
+# create a class to store data read in from the parameter file
+site_params = inpardata(parfilename)
+
+# read in the site-specific parameters
+print 'Reading in the site-specific parameter file:\n\t %s' %(sys.argv[1])
+site_params.read_parfile()
+
+
 # get things rolling
 # email_scope dictates whether read all or just update using the following options:
 #'ALL' means every message, 
 #'UNSEEN' means just new unread ones
-allmsg = email_reader(usr,pwd_encoded,email_scope)
+allmsg = email_reader(site_params)
 
 print 'Reading previous data from CSV files'
 allmsg.read_CSV_data()
@@ -53,11 +55,11 @@ else:
     allmsg.parsemail()
     print 'reading messages'
     # parse the individual messages
-    allmsg.parsemsgs()
+    allmsg.parsemsgs(site_params)
     
     # drop the data into a data fields
     print 'pushing data into fields'
-    allmsg.update_data_fields()
+    allmsg.update_data_fields(site_params)
     
     # write all data to CSV files
     print 'Writing data to CSV files'

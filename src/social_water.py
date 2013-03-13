@@ -7,12 +7,56 @@ import base64
 import sys
 import os
 import string
+import xml.etree.ElementTree as ET
 
 # fuzzywuzzy is a fuzzy string matching code from:
 # https://github.com/seatgeek/fuzzywuzzy
 # note that not really installing it here - just putting the code in locally
 import fuzz
 import process
+
+
+
+class inpardata:
+    def __init__(self,parfilename):
+        self.parfilename = parfilename
+        
+    def read_parfile(self):
+    # read in the case-specific parameters from the parfile
+        try:
+            inpardat = ET.parse(self.parfilename)
+        except:
+            raise(FileOpenFail(self.parfilename))  
+        inpars = inpardat.getroot()
+        # obtain EMAIL ACCOUNT INFORMATION
+        self.usr = inpars.findall('.//main_account/usr')[0].text
+        self.pwd_encoded = inpars.findall('.//main_account/pwd_encoded')[0].text
+        self.email_scope = inpars.findall('.//main_account/email_scope')[0].text
+        
+        # obtain TIMEZONE OFFSETS
+        self.dst_time_utc_offset = int(inpars.findall('.//tz_offsets/dst_time_utc_offset')[0].text)
+        self.std_time_utc_offset = int(inpars.findall('.//tz_offsets/std_time_utc_offset')[0].text)
+        # get the stations and bounds
+        self.stations = []
+        self.stations_and_bounds = dict()
+        stats = inpars.findall('.//stations/station')
+        for cstat in stats:
+            self.stations_and_bounds[cstat.text]=cstat.attrib
+            self.stations_and_bounds[cstat.text]['lbound'] = float(self.stations_and_bounds[cstat.text]['lbound'])
+            self.stations_and_bounds[cstat.text]['ubound'] = float(self.stations_and_bounds[cstat.text]['ubound'])
+        
+        # get the station_ID keywords
+        msg_ids = inpars.findall('.//msg_identifiers/id')
+        self.msg_ids = []
+        for cv in msg_ids:
+            self.msg_ids.append(cv.text)
+            
+        # get the keywords to remove from messages during parsing
+        msg_rms = inpars.findall('.//msg_remove_items/remitem')
+        self.msg_rms = []
+        for cv in msg_rms:
+            self.msg_rms.append(cv.text)
+
 
 class gage_results:
     # initialize the class
@@ -22,34 +66,60 @@ class gage_results:
         self.datenum = list()
         self.height = list()
         
+class timezone_conversion_schedule:
+    def __init__(self,start_month,start_day,end_month,end_day):
+        self.dst_start_month = start_month
+        self.dst_start_day = start_day
+        self.dst_end_month = end_month
+        self.dst_end_day = end_day
+
 class timezone_conversion_data:
-    def __init__(self):
+    def __init__(self,site_params):
         # set the timezone-specific values -- currently applies to all measurements
-        self.std_time_utc_offset = timedelta(hours = 5)
-        self.dst_time_utc_offset = timedelta(hours = 4)
-        self.dst_start_month = 3
-        self.dst_start_day = 11
+        self.std_time_utc_offset = timedelta(hours = site_params.std_time_utc_offset)
+        self.dst_time_utc_offset = timedelta(hours = site_params.dst_time_utc_offset)
+        # make a table of DST starting and ending times
         self.dst_start_hour = 2
-        self.dst_end_month = 11
-        self.dst_end_day = 4
         self.dst_end_hour = 2
+        # these data SUBJECT TO CHANGE --> source is http://www.itronmeters.com/dst_dates.htm
+        dst_start_month = [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 
+                3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3]
+        
+        dst_start_day=[13, 11,  10,  9,  8,  13,  12,  11,  10,  8,  14,  13,  12,  
+             10,  9,  8,  14,  12,  11,  10,  9,  14,  13,  12,  11,  9,  8,  14,  13,  11]
+        
+        dst_end_month=[11, 11,  11,  11,  11,  11,  11,  11,  11,  11,  11, 11,  11,  11,  11,  
+              11,  11,  11,  11,  11, 11,  11,  11,  11,  11,  11,  11,  11,  11,  11]
+        
+        dst_end_day=[6,4,  3,  2,  1,  6,  5,  4,  3,  1,  7,  6,  5,  3,  2, 
+                       1,  7,  5,  4,  3,  2,  7,  6,  5,  4,  2,  1,  7,  6,  4]
+        
+        year=[2011, 2012,  2013,  2014,  2015,  2016,  2017,  2018,  2019,  2020,  
+             2021,  2022,  2023,  2024,  2025,  2026,  2027,  2028,  2029,  
+             2030,  2031,  2032,  2033,  2034,  2035,  2036,  2037,  2038,  2039,  2040]      
+        
+        self.dst_sched = dict()
+        for i, cyear in enumerate(year):
+            self.dst_sched[cyear] = timezone_conversion_schedule(dst_start_month[i],
+                                                                 dst_start_day[i],
+                                                                 dst_end_month[i],
+                                                                 dst_end_day[i])
 
 class email_reader:
     # initialize the class
-    def __init__ (self,user,pwd_encoded,email_scope):
+    def __init__ (self,site_params):
         self.name = 'crowdhydrology'
-        self.user = user
-        self.pwd = base64.b64decode(pwd_encoded)
-        self.email_scope = email_scope
+        self.user = site_params.usr
+        self.pwd = base64.b64decode(site_params.pwd_encoded)
+        self.email_scope = site_params.email_scope
         self.data = dict()
         self.dfmt = '%a, %d %b %Y %H:%M:%S '
         self.outfmt = '%m/%d/%Y %H:%M:%S'
         # make a list of valid station IDs
-        self.stations = ['ny1000','ny1001','ny1002','ny1003',
-                         'ny1004','ny1005','ny1006','ny1007','ny1008']
+        self.stations = site_params.stations_and_bounds.keys()
         for i in self.stations:
             self.data[i] = gage_results(i)
-        self.tzdata = timezone_conversion_data()
+        self.tzdata = timezone_conversion_data(site_params)
 
 
     # read the previous data from the CSV files
@@ -109,17 +179,21 @@ class email_reader:
         print '-'
         
     # now parse the actual messages -- date and body
-    def parsemsgs(self):
+    def parsemsgs(self,site_params):
         # parse through all the messages
         for currmess in self.messages:
             # first the dates
             tmpdate = currmess.rawdate[:-5]
             currmess.date = datetime.strptime(tmpdate,self.dfmt)
-            currmess.date = tz_adjust_EST_EDT(currmess.date,self.tzdata)
+            currmess.date = tz_adjust_STD_DST(currmess.date,self.tzdata)
             currmess.dateout = datetime.strftime(currmess.date,self.outfmt)
             currmess.datestamp = time.mktime(datetime.timetuple(currmess.date)) 
             # now the message bodies
             cm = currmess.body 
+            # do a quick check that the message body is only a string - not a list
+            # a list happens if there is a forwarded message
+            if not isinstance(cm,str):
+                cm = cm[0].get_payload()
             maxratio = 0
             maxrat_count = -99999
            # maxrat_line = -99999
@@ -129,8 +203,10 @@ class email_reader:
             line = re.sub('(\n)',' ',line)
             line = re.sub('(--)',' ',line)
             
-            if (('ny' in line) or ('by' in line) or ('my' in line) or ('station' in line)):
-                currmess.is_gage_msg = True
+            for citem in site_params.msg_ids:
+                if citem.lower() in line:
+                    currmess.is_gage_msg = True                    
+            if currmess.is_gage_msg == True:
                 matched = False # set a flag to see if a match has been found
                 # now check for the obvious - that the exact station number is in the line
                 for j,cs in enumerate(self.stations):
@@ -144,13 +220,8 @@ class email_reader:
                 # if no exact match found, get fuzzy!
                 if matched == False:
                     # we will test the line, but we need to remove some terms using regex substitutions
-                    line = re.sub('(ny)','',line)
-                    line = re.sub('(by)','',line)
-                    line = re.sub('(my)','',line)
-                    line = re.sub('(station)','',line)
-                    line = re.sub('(water)','',line)
-                    line = re.sub('(level)','',line)
-                    line = re.sub('(#)','',line)
+                    for cremitem in site_params.msg_rms:
+                        line = re.sub('('+cremitem.lower()+')','',line)
                     # now get rid of the floating point values that should be the stage
                     # using regex code from: http://stackoverflow.com/questions/385558/
                     # python-and-regex-question-extract-float-double-value
@@ -174,17 +245,19 @@ class email_reader:
                     continue
 
     # for the moment, just re-populate the entire data fields
-    def update_data_fields(self):
+    def update_data_fields(self,site_params):
         #mnfdebug ofpdebug = open('debug.dat','w')
         for cm in self.messages:
-            if cm.is_gage_msg:
-                if ((cm.gageheight > 0) and (cm.gageheight < 20)):
+            if cm.is_gage_msg and cm.closest_station_match != -99999:
+                lb = site_params.stations_and_bounds[self.stations[cm.closest_station_match]]['lbound']
+                ub = site_params.stations_and_bounds[self.stations[cm.closest_station_match]]['ubound']
+                if ((cm.gageheight > lb) and  (cm.gageheight < ub)):
                     self.data[self.stations[cm.closest_station_match]].date.append(cm.date.strftime(self.outfmt))
                     self.data[self.stations[cm.closest_station_match]].datenum.append(cm.datestamp)
                     self.data[self.stations[cm.closest_station_match]].height.append(cm.gageheight)
                    #mnfdebug ofpdebug.write('%25s%20f%12f%12s\n' %(cm.date.strftime(self.outfmt),cm.datestamp,cm.gageheight,self.stations[cm.closest_station_match]))
         #mnfdebug ofpdebug.close()
-    # write all data to CSV files            
+    # write all data to CSV files                       
     def write_all_data_to_CSV(self):
     # loop through the stations
         for cg in self.stations:
@@ -194,11 +267,14 @@ class email_reader:
             dateval = self.data[cg].date
             gageheight = self.data[cg].height
             outdata = np.array(zip(datenum,dateval,gageheight))
-            unique_dates =np.unique(outdata[:,0])
-            indies = np.searchsorted(outdata[:,0],unique_dates)
-            final_outdata = outdata[indies,:]
-            for i in xrange(len(final_outdata)):
-                ofp.write(final_outdata[i,1] + ',' + str(final_outdata[i,2]) + ',' + str(final_outdata[i,0]) + '\n')
+            if len(outdata) == 0:
+                print '%s has no measurements yet' %(cg)
+            else:
+                unique_dates =np.unique(outdata[:,0])
+                indies = np.searchsorted(outdata[:,0],unique_dates)
+                final_outdata = outdata[indies,:]
+                for i in xrange(len(final_outdata)):
+                    ofp.write(final_outdata[i,1] + ',' + str(final_outdata[i,2]) + ',' + str(final_outdata[i,0]) + '\n')
             ofp.close()
                 
     # plot the results in a simple time series using Dygraphs javascript (no Flash ) option
@@ -248,17 +324,21 @@ class email_reader:
             ofp.write(self.data[cg].charttext)
             ofp.close()
 
-def tz_adjust_EST_EDT(cdateUTC,tzdata):
-    # make the adjustment, based on 2011 and onward, EST/EDT schedule
-    # this must be adjusted for other timezones
-    # details of the schedule can be found at http://www.timeanddate.com/worldclock/
+def tz_adjust_STD_DST(cdateUTC,tzdata):
+    # make the adjustment, based on 2012 and onward, STD/DST schedule
+    # based on the general schedule and data provided by the user
     cmonth = cdateUTC.month
     cday = cdateUTC.day
     chour = cdateUTC.hour
     cmin = cdateUTC.minute
     cyear= cdateUTC.year
-    dst_start = datetime(cyear,tzdata.dst_start_month,tzdata.dst_start_day,tzdata.dst_start_hour)
-    dst_end = datetime(cyear,tzdata.dst_end_month,tzdata.dst_end_day,tzdata.dst_end_hour)
+    
+    dst_start = datetime(cyear,tzdata.dst_sched[cyear].dst_start_month,
+                         tzdata.dst_sched[cyear].dst_start_day,
+                         tzdata.dst_start_hour)
+    dst_end = datetime(cyear,tzdata.dst_sched[cyear].dst_end_month,
+                       tzdata.dst_sched[cyear].dst_end_day,
+                       tzdata.dst_end_hour)
     # see if the current time in UTC falls within DST or not and adjust accordingly
     if ((cdateUTC >= dst_start) and (cdateUTC <= dst_end)):
         cdate = cdateUTC - tzdata.dst_time_utc_offset
@@ -266,6 +346,8 @@ def tz_adjust_EST_EDT(cdateUTC,tzdata):
         cdate = cdateUTC - tzdata.std_time_utc_offset
     return cdate
 
+
+    
 class email_message:
     # initialize an individual message
     def __init__(self,date,header,txt):
@@ -293,10 +375,24 @@ class LogonFail(Exception):
     def __str__(self):
         return('\n\nLogin Failed: \n' +
                'Cannot log on ' + self.name)
-# -- cannot connect to spreadsheet
-class SheetConnect(Exception):
-    def __init__(self,key):
-        self.key=key
+
+# -- user did not provide a parameter filename when calling sw_driver.py
+class NoParfileFail(Exception):
+    def __init__(self):
+        self.err = ''
     def __str__(self):
-        return('\n\nCannot connec to spreadsheet with key:\n' + self.key)
-    
+        return('\n\nCould not find parameter filename. \n' +
+               'Call should be made as "python sw_driver.py <parfilename>"\n' +
+               'where <parfilename> is the name of a parameter file.')
+# -- cannot open an input file
+class FileOpenFail(Exception):
+    def __init__(self,filename):
+        self.fn = filename
+    def __str__(self):
+        return('\n\nCould not open %s.' %(self.fn))    
+# -- Invalid station value for bounds
+class InvalidBounds(Exception):
+    def __init__(self,statID):
+        self.station = statID
+    def __str__(self):
+        return('\n\nStation "%s" not in the list of stations above.\nCheck for consistency.' %(self.station))
