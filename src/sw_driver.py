@@ -4,6 +4,7 @@ import base64
 import sys
 print '############################'
 print '#       Social.Water       #'
+print '#       Version 1.1        #'
 print '#    a m!ke@usgs joint     #'
 print '############################'
 print 'Making some initializations'
