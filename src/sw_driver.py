@@ -34,7 +34,7 @@ allmsg.read_CSV_data()
 
 
 
-print 'Attempting to log on to gmail account'
+print 'Attempting to log on to gmail account:\n\t%s' %(site_params.usr)
 # login to the account
 allmsg.login()
 print 'Succesfully logged on to gmail account'

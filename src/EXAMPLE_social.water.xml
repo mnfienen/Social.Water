@@ -20,8 +20,8 @@
 		<!-- for each station, a record in this list is required.
 		    Station number is the value, while lbound and ubound are attributes indicating the 
 		    maximum and minimum range for values-->
-		<station lbound="0.0" ubound="4.0"> NY1000</station>
-		<station lbound="0.0" ubound="4.0"> NY1001</station>
+		<station lbound="0.0" ubound="4.0">NY1000</station>
+		<station lbound="0.0" ubound="4.0">NY1001</station>
 	</stations>
 	<msg_identifiers>
 		<!-- a keyword must be found within a message to indicate that the message contains
