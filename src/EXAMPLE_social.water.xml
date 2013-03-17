@@ -13,8 +13,8 @@
     </main_account>
 	<tz_offsets>
 		<!-- The following offsets are in hours from UTC for standard and daylight saving time -->
-        <std_time_utc_offset>6    </std_time_utc_offset>
-        <dst_time_utc_offset>5    </dst_time_utc_offset>
+        <std_time_utc_offset>6</std_time_utc_offset>
+        <dst_time_utc_offset>5</dst_time_utc_offset>
 	</tz_offsets>
 	<stations>
 		<!-- for each station, a record in this list is required.

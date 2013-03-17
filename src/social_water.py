@@ -126,8 +126,8 @@ class email_reader:
     def read_CSV_data(self):
     # loop through the stations
         for cg in self.stations:
-            if os.path.exists('../data/' + cg + '.csv'):
-                indat = np.genfromtxt('../data/' + cg + '.csv',dtype=None,delimiter=',',names=True)
+            if os.path.exists('../data/' + cg.upper() + '.csv'):
+                indat = np.genfromtxt('../data/' + cg.upper() + '.csv',dtype=None,delimiter=',',names=True)
                 dates = np.atleast_1d(indat['Date_and_Time'])
                 gageheight = np.atleast_1d(indat['Gage_Height_ft']) 
                 datenum = np.atleast_1d(indat['POSIX_Stamp'])
@@ -261,7 +261,7 @@ class email_reader:
     def write_all_data_to_CSV(self):
     # loop through the stations
         for cg in self.stations:
-            ofp = open('../data/' + cg + '.csv','w')
+            ofp = open('../data/' + cg.upper() + '.csv','w')
             ofp.write('Date and Time,Gage Height (ft),POSIX Stamp\n')
             datenum = self.data[cg].datenum # POSIX time stamp fmt for sorting
             dateval = self.data[cg].date
@@ -320,7 +320,7 @@ class email_reader:
 
             
             self.data[cg].charttext = header + middata + footer
-            ofp = open('../charts/' + cg + '_dygraph.html','w')
+            ofp = open('../charts/' + cg.upper() + '_dygraph.html','w')
             ofp.write(self.data[cg].charttext)
             ofp.close()
 
