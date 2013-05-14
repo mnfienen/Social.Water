@@ -38,13 +38,16 @@ class inpardata:
         self.std_time_utc_offset = int(inpars.findall('.//tz_offsets/std_time_utc_offset')[0].text)
         # get the stations and bounds
         self.stations = []
+        self.statnums = []
         self.stations_and_bounds = dict()
         stats = inpars.findall('.//stations/station')
         for cstat in stats:
             self.stations_and_bounds[cstat.text]=cstat.attrib
             self.stations_and_bounds[cstat.text]['lbound'] = float(self.stations_and_bounds[cstat.text]['lbound'])
             self.stations_and_bounds[cstat.text]['ubound'] = float(self.stations_and_bounds[cstat.text]['ubound'])
-        
+            self.statnums.append(int(re.findall("\d+",cstat.text)[0]))
+        self.minstatnum = min(self.statnums)    
+        self.maxstatnum = max(self.statnums)
         # get the station_ID keywords
         msg_ids = inpars.findall('.//msg_identifiers/id')
         self.msg_ids = []
@@ -120,7 +123,9 @@ class email_reader:
         for i in self.stations:
             self.data[i] = gage_results(i)
         self.tzdata = timezone_conversion_data(site_params)
-
+        self.minstatnum = site_params.minstatnum
+        self.maxstatnum = site_params.maxstatnum
+        
 
     # read the previous data from the CSV files
     def read_CSV_data(self):
@@ -227,13 +232,26 @@ class email_reader:
                     # python-and-regex-question-extract-float-double-value
                     currmess.station_line = line
                     line = re.sub("[+-]? *(?:\d+(?:\.\d*)|\.\d+)(?:[eE][+-]?\d+)?",'', line)
-                    
-                    for j,cs in enumerate(self.stations):
-                        # get the similarity ratio
-                        crat = fuzz.ratio(line,cs)
-                        if crat > maxratio:
-                            maxratio = crat
-                            maxrat_count = j
+                    tmp_ints = re.findall("\d+",line)
+                    remaining_ints = []
+                    for cval in tmp_ints:
+                        remaining_ints.append(int(cval))
+                    print line
+                    print remaining_ints
+                    if len(remaining_ints) < 1:
+                        maxratio = 0
+                        break
+                    elif ((max(remaining_ints) < self.minstatnum) or 
+                        (min(remaining_ints) > self.maxstatnum)):
+                        maxratio = 0
+                        break
+                    else:
+                        for j,cs in enumerate(self.stations):
+                            # get the similarity ratio
+                            crat = fuzz.ratio(line,cs)
+                            if crat > maxratio:
+                                maxratio = crat
+                                maxrat_count = j
                 currmess.max_prox_ratio = maxratio    
                 currmess.closest_station_match = maxrat_count
                 
