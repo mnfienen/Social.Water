@@ -236,15 +236,14 @@ class email_reader:
                     remaining_ints = []
                     for cval in tmp_ints:
                         remaining_ints.append(int(cval))
-                    print line
-                    print remaining_ints
+
                     if len(remaining_ints) < 1:
                         maxratio = 0
-                        break
+                        
                     elif ((max(remaining_ints) < self.minstatnum) or 
                         (min(remaining_ints) > self.maxstatnum)):
                         maxratio = 0
-                        break
+                        
                     else:
                         for j,cs in enumerate(self.stations):
                             # get the similarity ratio
