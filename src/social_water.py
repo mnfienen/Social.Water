@@ -216,11 +216,21 @@ class email_reader:
                 # now check for the obvious - that the exact station number is in the line
                 for j,cs in enumerate(self.stations):
                     # see if there's an exact match first
-                    if cs in line:
-                        currmess.station_line = line
+                    if cs.lower() in line.lower():
                         maxratio = 100
                         maxrat_count = j
                         matched = True
+                        # also strip out the station ID, including possibly a '.' on the end
+                        if '1007' in cs:
+                            print line
+                        line = re.sub(cs.lower()+'\.','',line)
+                        if '1007' in cs:
+                            print line
+                        line = re.sub(cs.lower(),'',line)                  
+                        if '1007' in cs:
+                            print line
+                            print cs
+                        currmess.station_line = line                        
                         break
                 # if no exact match found, get fuzzy!
                 if matched == False:
