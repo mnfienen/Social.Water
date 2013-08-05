@@ -221,15 +221,8 @@ class email_reader:
                         maxrat_count = j
                         matched = True
                         # also strip out the station ID, including possibly a '.' on the end
-                        if '1007' in cs:
-                            print line
                         line = re.sub(cs.lower()+'\.','',line)
-                        if '1007' in cs:
-                            print line
                         line = re.sub(cs.lower(),'',line)                  
-                        if '1007' in cs:
-                            print line
-                            print cs
                         currmess.station_line = line                        
                         break
                 # if no exact match found, get fuzzy!
