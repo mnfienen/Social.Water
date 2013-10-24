@@ -301,53 +301,48 @@ class email_reader:
     def plot_results_dygraphs(self):
         # loop through the stations
         for cg in self.stations:
-            #datenum = self.data[cg].datenum ## depracated ##
-            dateval = self.data[cg].date
-            gageheight = self.data[cg].height
-            header = ('<!DOCTYPE html>\n<html>\n' +
-                      '  <head>\n' +
-                      '    <meta http-equiv="X-UA-Compatible" content="IE=EmulateIE7; IE=EmulateIE9">\n' +
-                      '    <!--[if IE]><script src="js/graph/excanvas.js"></script><![endif]-->\n' +
-                      '  </head>\n' +
-                        '  <body>\n' +
-                        "  "*2 + '<script src="js/graph/dygraph-combined.js" type="text/javascript"></script> \n'+
-                        "  "*3 +  '<div id="graphdiv"></div>\n<script>\n')
-            footer = ("  "*4 + 'g = new Dygraph(\n' +
-                    "  "*4 + 'document.getElementById("graphdiv"),\n' +
-                    "  "*4 + '"../data/%s.csv",\n' %cg + 
-                    "  "*4 + '{   title: "Hydrograph at ' +cg+ '",\n'  + 
-                    "  "*4 + "labelsDivStyles: { 'textAlign': 'right' },\n" +
-                    "  "*4 + 'showRoller: true,\n' + 
-                    "  "*4 + "xValueFormatter: Dygraph.dateString_,\n" + 
-                    "  "*4 + "xTicker: Dygraph.dateTicker,\n" +
-                    "  "*4 + "labelsSeparateLines: true,\n" +
-                    "  "*4 + "labelsKMB: true,\n" +
-                    "  "*4 + "visibility: [true,false],\n" +                    
-                    "  "*4 + "drawXGrid: false,\n" + 
-                    "  "*4 + " width: 640,\n" + 
-                    "  "*4 + "height: 300,\n" +
-                    "  "*4 + "xlabel: 'Date',\n" + 
-                    "  "*4 + "ylabel: 'Gage Height (ft.)',\n" + 
-                    "  "*4 + 'colors: ["blue"],\n' + 
-                    "  "*4 + "strokeWidth: 2,\n" + 
-                    "  "*4 + "showRangeSelector: true\n"  +
-                    "  "*4 + "}\n" +
-                    "  "*4 + ");\n" +
-                    "</script>\n</body>\n</html>\n")
+            hh = '../charts/' + cg.upper() + '_dygraph.html'
+            if os.path.exists('../charts/' + cg.upper() + '_dygraph.html') == 0:
+                header = ('<!DOCTYPE html>\n<html>\n' +
+                        '  <head>\n' +
+                        '    <meta http-equiv="X-UA-Compatible" content="IE=EmulateIE7; IE=EmulateIE9">\n' +
+                        '    <!--[if IE]><script src="js/graph/excanvas.js"></script><![endif]-->\n' +
+                        '  </head>\n' +
+                            '  <body>\n' +
+                            "  "*2 + '<script src="js/graph/dygraph-combined.js" type="text/javascript"></script> \n'+
+                            "  "*3 +  '<div id="graphdiv"></div>\n<script>\n')
+                footer = ("  "*4 + 'g = new Dygraph(\n' +
+                        "  "*4 + 'document.getElementById("graphdiv"),\n' +
+                        "  "*4 + '"../data/%s.csv",\n' %cg + 
+                        "  "*4 + '{   title: "Hydrograph at ' +cg+ '",\n'  + 
+                        "  "*4 + "labelsDivStyles: { 'textAlign': 'right' },\n" +
+                        "  "*4 + 'showRoller: true,\n' + 
+                        "  "*4 + "xValueFormatter: Dygraph.dateString_,\n" + 
+                        "  "*4 + "xTicker: Dygraph.dateTicker,\n" +
+                        "  "*4 + "labelsSeparateLines: true,\n" +
+                        "  "*4 + "labelsKMB: true,\n" +
+                        "  "*4 + "visibility: [true,false],\n" +                    
+                        "  "*4 + "drawXGrid: false,\n" + 
+                        "  "*4 + " width: 640,\n" + 
+                        "  "*4 + "height: 300,\n" +
+                        "  "*4 + "xlabel: 'Date',\n" + 
+                        "  "*4 + "ylabel: 'Gage Height (ft.)',\n" + 
+                        "  "*4 + 'colors: ["blue"],\n' + 
+                        "  "*4 + "strokeWidth: 2,\n" + 
+                        "  "*4 + "showRangeSelector: true\n"  +
+                        "  "*4 + "}\n" +
+                        "  "*4 + ");\n" +
+                        "</script>\n</body>\n</html>\n")
 
             
-            self.data[cg].charttext = header  + footer
-            ofp = open('../charts/' + cg.upper() + '_dygraph.html','w')
-            ofp.write(self.data[cg].charttext)
-            ofp.close()
+                self.data[cg].charttext = header  + footer
+                ofp = open('../charts/' + cg.upper() + '_dygraph.html','w')
+                ofp.write(self.data[cg].charttext)
+                ofp.close()
 
 def tz_adjust_STD_DST(cdateUTC,tzdata):
     # make the adjustment, based on 2012 and onward, STD/DST schedule
     # based on the general schedule and data provided by the user
-    cmonth = cdateUTC.month
-    cday = cdateUTC.day
-    chour = cdateUTC.hour
-    cmin = cdateUTC.minute
     cyear= cdateUTC.year
     
     dst_start = datetime(cyear,tzdata.dst_sched[cyear].dst_start_month,
