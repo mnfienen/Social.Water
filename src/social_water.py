@@ -178,9 +178,9 @@ class email_reader:
                 print '-',
                 sys.stdout.flush()
             resp, data = self.m.fetch(cm, "(RFC822)")
-            msg = email.message_from_string(data[0][1])
-            if 'sms from' in msg['Subject'].lower():
-                self.messages.append(email_message(msg['Date'],msg['Subject'],msg.get_payload()))
+            msg = email.message_from_string(data[0][1])  #TODO: check this array for misalignment of text from email vs sms
+            if 'sms from' in msg['Subject'].lower(): #same story here
+                self.messages.append(email_message(msg['Date'],msg['Subject'],msg.get_payload()))  ##
         print '-'
         
     # now parse the actual messages -- date and body
@@ -197,7 +197,7 @@ class email_reader:
             cm = currmess.body 
             # do a quick check that the message body is only a string - not a list
             # a list happens if there is a forwarded message
-            if not isinstance(cm,str):
+            if not isinstance(cm,str):   ### TODO: Ask what this check is for.
                 cm = cm[0].get_payload()
             maxratio = 0
             maxrat_count = -99999
@@ -234,7 +234,7 @@ class email_reader:
                     # using regex code from: http://stackoverflow.com/questions/385558/
                     # python-and-regex-question-extract-float-double-value
                     currmess.station_line = line
-                    line = re.sub("[+-]? *(?:\d+(?:\.\d*)|\.\d+)(?:[eE][+-]?\d+)?",'', line)
+                    line = re.sub("[+-]? *(?:\d+(?:\.\d*)|\.\d+)(?:[eE][+-]?\d+)?",'', line)  ## TODO: fully read this out, maybe rewrite this to be more specific and not use *'s
                     tmp_ints = re.findall("\d+",line)
                     remaining_ints = []
                     for cval in tmp_ints:
@@ -258,11 +258,12 @@ class email_reader:
                 currmess.closest_station_match = maxrat_count
                 
                 # rip the float out of the line
-                v = re.findall("[+-]? *(?:\d+(?:\.\d*)|\.\d+)(?:[eE][+-]?\d+)?", currmess.station_line)
+                v = re.findall("[+-]? *(?:\d+(?:\.\d*)|\.\d+)(?:[eE][+-]?\d+)?", currmess.station_line) ##TODO: mm- I have a bad feeling about these regex, make a unit test for these. They might be better but I am 90% that they are too broad.
                 try:
                     currmess.gageheight = float(v[0])
                 except:
                     continue
+
 
     # for the moment, just re-populate the entire data fields
     def update_data_fields(self,site_params):

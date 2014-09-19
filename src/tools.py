@@ -16,7 +16,7 @@ ONE_LATLON = re.compile(r"\-?(?<![0-9])[0-9]{1,3}\.[0-9]{1,15}")
 
 ONE_DOUBLE = re.compile(r"\-?(?<![0-9])[0-9]{1,15}\.[0-9]{1,15}")
 ## Searches for a double, between 1-15 leading digits, 1-15 trailing digits.
-ALT_DOUBLE = re.compile(r"\-?(?<![0-9])[0-9]\.?[0-9]{0,10}[Ee][0-9]{1,10}"))
+ALT_DOUBLE = re.compile(r"\-?(?<![0-9])[0-9]\.?[0-9]{0,10}[Ee][0-9]{1,10}")
 ## Searches for alternate scientific notation doubles, 1.23e200 or 1E20 or 1.2234E12300
 ## Must have 1 leading digit, may or may not have decimal digits in the significand,
 ## must have either e or E, and at least one expontential digit.
