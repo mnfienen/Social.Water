@@ -29,9 +29,15 @@ def validate_string(s):
         return False
     return True
 
+def remove_cr(s):
+    s = s.replace('\r', ' ')
+    return s
+
+
 def full_process(s):
     s = s.lower()
     s = s.strip()
+    s = s.remove_cr(s)
     s = remove_punctuation(s)
     x = asciidammit(s)
     return x

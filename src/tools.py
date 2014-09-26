@@ -12,7 +12,8 @@ ONE_LATLON = re.compile(r"\-?(?<![0-9])[0-9]{1,3}\.[0-9]{1,15}")
 ## Finds a lat/lon style point, between one and three leading digits,
 ##Up to 15 trailing digits. 
 ## TODO: This could be better if it searched more specifically...
-	## Maybe only searched for values within the proper ranges. -180,180 90,90
+## Maybe only searched for values within the proper ranges. -180,180 90,90
+
 
 ONE_DOUBLE = re.compile(r"\-?(?<![0-9])[0-9]{1,15}\.[0-9]{1,15}")
 ## Searches for a double, between 1-15 leading digits, 1-15 trailing digits.
