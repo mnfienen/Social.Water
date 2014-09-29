@@ -9,6 +9,9 @@ import re
 
 ONE_LATLON = re.compile(r"\-?(?<![0-9])[0-9]{1,3}\.[0-9]{1,15}")
 
+A_PHONE_NUMBER = re.compile(r"(?<!\-)(?<![0-9])([0-9]{1,3}\-)?[0-9]{3}[\-| ][0-9]{3}[\-| ][0-9]{4}")
+
+
 ## Finds a lat/lon style point, between one and three leading digits,
 ##Up to 15 trailing digits. 
 ## TODO: This could be better if it searched more specifically...
@@ -52,3 +55,10 @@ def find_double(line):
 		raise NoLatLonError( line )
 		"""Return the group if it has found a match. If not: raise our error."""
 
+def find_phone_number(line):
+	matches = A_PHONE_NUMBER.search(line)
+	if matches:
+		return str( matches.group(0) )
+	else:
+		raise NoLatLonError( line )
+	"""Pretty similar to these other functions. If we find a number return it, otherwise spit back the line and raise an exception."""

@@ -86,10 +86,98 @@ class TestTools(unittest.TestCase):
 		tester = "This \n\ris \n\r\ra \n\r\t\033[49m\n \033[31mperfectly\033[39m \r\nvalid string"
 		self.assertTrue( utils.validate_string(tester) ) 
 
+	def test_correct_subject(self):
+		
+		tester = "sms from 120341"
+		self.assertEquals( utils.correct_subject(tester), True)
+		
+		tester = "SMS FROM 120341"
+		self.assertEquals( utils.correct_subject(tester), True)
+		
+		tester = "S M S F R O M 123-8121-0412"
+		self.assertTrue(  not utils.correct_subject(tester), "Spaces in line, shouldn't have parsed as true")
+		
+		tester = "Organisms from the bottom of the sea"
+		self.assertTrue( utils.correct_subject(tester), "This will parse as true but probably shouldn't...")
 
+		tester = "BACK SPASMS FROM WORK RELATED INJURIES? CALL SUPERLAWER AT 1800SCAMLAW NOW!"
+		self.assertTrue( utils.correct_subject(tester), "This will parse as true but probably shouldn't...")
+		
 
+	def test_find_phone_no_country_code(self):
+		line = "Some phone number: 504-908-0034 "
+		self.assertEquals(tools.find_phone_number(line), "504-908-0034" )
 
+	def test_find_phone_with_country_code(self):
+		line = "Some phone number: 1-504-908-0034 "
+		self.assertEquals(tools.find_phone_number(line), "1-504-908-0034" )
 
+	def test_find_phone_with_country_code(self):
+		line = "Some phone number: 321-504-908-0034 "
+		self.assertEquals(tools.find_phone_number(line), "321-504-908-0034" )
+
+	def test_find_phone_with_country_code(self):
+		line = "Some phone number: 3223-504-908-0034 "
+		try:
+			thing  = tools.find_phone_number(line)
+			self.fail(" 3223-504-908-0034 shouldn't have parsed as a phone number.")
+		except NoLatLonError as error:
+			
+			pass
+		"""LOGICNOTE: Similar logic to some of the tests above,
+		 if this parses that number as a phone number, it has done 
+		 something wrong. We'll run a few tests like this to make sure it's not picking  up anything we don't want.
+		 """
+
+	def test_find_phone_with_dash(self):
+		line = "Some phone number: -504-908-0034 "
+		try:
+			thing  = tools.find_phone_number(line)
+			self.fail("-504-908-0034 shouldn't have parsed as a phone number.")
+		except NoLatLonError as error:
+			
+			pass
+
+	def test_find_phone_with_incomplete_entry(self):
+		line = "Some phone number: 04-908-0034 "
+		try:
+			thing  = tools.find_phone_number(line)
+			self.fail("04-908-0034 shouldn't have parsed as a phone number.")
+		except NoLatLonError as error:
+			##Woo! it worked.
+			pass
+
+	def test_find_phone_with_parens(self):
+		line = "Some phone number: (504)-908-0034 "
+		try:
+			thing  = tools.find_phone_number(line)
+		except NoLatLonError as error:
+			self.fail("(504)-908-0034 should have parsed as a number.")
+			pass
+
+	def test_find_phone_with_parens2(self):
+		line = "Some phone number: (504) 908-0034 "
+		try:
+			thing  = tools.find_phone_number(line)
+		except NoLatLonError as error:
+			self.fail(" (504) 908-0034 should have parsed as an accceptable number." )
+			pass
+
+	def test_find_phone_with_spaces(self):
+		line = "Some phone number: 504 908 0034 "
+		try:
+			thing  = tools.find_phone_number(line)
+		except NoLatLonError as error:
+			self.fail(" 504 908 0034 should have parsed as an accceptable number." )
+			pass
+
+	def test_find_phone_with_spaces_and_dashes(self):
+		line = "Some phone number: 504 908-0034 "
+		try:
+			thing  = tools.find_phone_number(line)
+		except NoLatLonError as error:
+			self.fail(" 504 908-0034 should have parsed as an accceptable number." )
+			pass
 
 
 

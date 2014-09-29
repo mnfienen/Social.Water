@@ -43,6 +43,7 @@ def full_process(s):
     return x
 
 
-
+def correct_subject(subject):
+    return 'sms from' in subject.lower()
 
 
