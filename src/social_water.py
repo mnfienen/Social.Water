@@ -197,7 +197,7 @@ class email_reader:
             cm = currmess.body 
             # do a quick check that the message body is only a string - not a list
             # a list happens if there is a forwarded message
-            if not isinstance(cm,str):   ### TODO: Ask what this check is for.
+            if not isinstance(cm,str):   
                 cm = cm[0].get_payload()
             maxratio = 0
             maxrat_count = -99999
@@ -210,7 +210,8 @@ class email_reader:
             
             for citem in site_params.msg_ids:
                 if citem.lower() in line:
-                    currmess.is_gage_msg = True                    
+                    currmess.is_gage_msg = True 
+                       
             if currmess.is_gage_msg == True:
                 matched = False # set a flag to see if a match has been found
                 # now check for the obvious - that the exact station number is in the line

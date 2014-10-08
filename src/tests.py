@@ -2,6 +2,7 @@ import unittest
 import tools
 from tools import *
 import utils
+import social_water as sw
 
 class TestTools(unittest.TestCase):
 
@@ -9,6 +10,11 @@ class TestTools(unittest.TestCase):
 		self.double1 = 123.456788
 		self.double2 = -32.3454632123
 		self.line = "Here's a line of test text" + str(self.double1) + ":$:" +str(self.double2)
+
+
+	def test_inpardata_creation(self):
+		test = sw.inpardata("testfile.xml")
+
 
 
 	def test_find_latlon1(self):
@@ -146,7 +152,7 @@ class TestTools(unittest.TestCase):
 		except NoLatLonError as error:
 			##Woo! it worked.
 			pass
-
+	"""
 	def test_find_phone_with_parens(self):
 		line = "Some phone number: (504)-908-0034 "
 		try:
@@ -162,7 +168,7 @@ class TestTools(unittest.TestCase):
 		except NoLatLonError as error:
 			self.fail(" (504) 908-0034 should have parsed as an accceptable number." )
 			pass
-
+	"""
 	def test_find_phone_with_spaces(self):
 		line = "Some phone number: 504 908 0034 "
 		try:
