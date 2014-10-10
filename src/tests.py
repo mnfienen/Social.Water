@@ -4,6 +4,11 @@ from tools import *
 import utils
 import social_water as sw
 
+class email_stub():
+	def __init__(self):
+		self.header = "sms from (504) 908-0034 test header"
+
+
 class TestTools(unittest.TestCase):
 
 	def setUp(self):
@@ -111,16 +116,16 @@ class TestTools(unittest.TestCase):
 		
 
 	def test_find_phone_no_country_code(self):
-		line = "Some phone number: 504-908-0034 "
-		self.assertEquals(tools.find_phone_number(line), "504-908-0034" )
+		line = "Some phone number: (504) 908-0034 "
+		self.assertEquals(tools.find_phone_number(line), "(504) 908-0034" )
 
 	def test_find_phone_with_country_code(self):
 		line = "Some phone number: 1-504-908-0034 "
-		self.assertEquals(tools.find_phone_number(line), "1-504-908-0034" )
+		self.assertEquals(tools.find_phone_number(line), "1 (504) 908-0034" )
 
 	def test_find_phone_with_country_code(self):
 		line = "Some phone number: 321-504-908-0034 "
-		self.assertEquals(tools.find_phone_number(line), "321-504-908-0034" )
+		self.assertEquals(tools.find_phone_number(line), "321 (504) 908-0034" )
 
 	def test_find_phone_with_country_code(self):
 		line = "Some phone number: 3223-504-908-0034 "
@@ -136,10 +141,10 @@ class TestTools(unittest.TestCase):
 		 """
 
 	def test_find_phone_with_dash(self):
-		line = "Some phone number: -504-908-0034 "
+		line = "Some phone number: -(504) 908-0034 "
 		try:
 			thing  = tools.find_phone_number(line)
-			self.fail("-504-908-0034 shouldn't have parsed as a phone number.")
+			self.fail("-(504) 908-0034 shouldn't have parsed as a phone number.")
 		except NoLatLonError as error:
 			
 			pass
@@ -170,7 +175,7 @@ class TestTools(unittest.TestCase):
 			pass
 	"""
 	def test_find_phone_with_spaces(self):
-		line = "Some phone number: 504 908 0034 "
+		line = "Some phone number: (504) 908 0034 "
 		try:
 			thing  = tools.find_phone_number(line)
 		except NoLatLonError as error:
@@ -178,12 +183,27 @@ class TestTools(unittest.TestCase):
 			pass
 
 	def test_find_phone_with_spaces_and_dashes(self):
-		line = "Some phone number: 504 908-0034 "
+		line = "Some phone number: (504) 908-0034 "
 		try:
 			thing  = tools.find_phone_number(line)
 		except NoLatLonError as error:
 			self.fail(" 504 908-0034 should have parsed as an accceptable number." )
 			pass
+
+	def test_remove_chars(self):
+		string = "Here's a string and we will remove () some ';. chars"
+		string  = remove_chars(string, "'()';.")
+		self.assertEquals(string,"Heres a string and we will remove  some  chars")
+		string = "      woo        "
+		string  = remove_chars(string, "o ")
+		self.assertEqual(string, "w")
+
+	def test_hash_phone_number(self):
+		testmsg = email_stub()
+		testhash = hash_phone_number(testmsg)
+		self.assertEquals( str( testhash ), "9d6feecd-8c04-3264-926e-3da1476e4125")
+
+
 
 
 

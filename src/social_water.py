@@ -365,6 +365,7 @@ def tz_adjust_STD_DST(cdateUTC,tzdata):
 class email_message:
     # initialize an individual message
     def __init__(self,date,header,txt):
+
         self.is_gage_msg = False
         self.header=header
         self.body=txt
@@ -375,6 +376,7 @@ class email_message:
         self.closest_station_match = ''
         self.station_line = ''
         self.gageheight = -99999
+        self.fromUUID = None
         
 
         
