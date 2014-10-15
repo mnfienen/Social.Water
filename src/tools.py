@@ -14,25 +14,61 @@ import base64
 ONE_DECIMAL = re.compile(r"\-?(?<![0-9])[0-9]{1,3}\.[0-9]{1,15}")
 
 A_PHONE_NUMBER = re.compile(r"(?<!\-)(?<![0-9])([0-9]{1,3}\-)?\([0-9]{3}\)[\-| ][0-9]{3}[\-| ][0-9]{4}")
-
-
 ## Finds a double/float style number, between one and three leading digits,
 ##Up to 15 trailing digits. 
 ## TODO: This could be better if it searched more specifically...
 ## Maybe only searched for values within the proper ranges. -180,180 90,90
 
 #  (?<![0-9])
-ONE_DOUBLE = re.compile(r"\-?(?<![0-9])[0-9]{1,15}\.[0-9]{1,15}[eE][+-]?[0-9]{1,15}")
+ONE_DOUBLE = re.compile(r"\-?(?<![0-9])([0-9]{1,15})?\.[0-9]{1,15}([eE][+-]?[0-9]{1,15})?")
 ## Searches for a double, between 1-15 leading digits, 1-15 trailing digits.
 ##This regex will also match a float of form 90.2342342234e12412.
 ## The digits are limited to 15 simply to avoid a possible stack overflow while searching through a *really* large number string.
 ## Out in the field, there shouldn't be any floats with 45 significant digits, so if we get to that point then something has gone really wrong.
+
+FRACTION_FINDER = re.compile(r"([0-9]{0,9}(?<=[0-9]) )?[0-9]{0,9}[/\\][0-9]{0,9}")
 
 class NoNumError(Exception):
 	def __init__(self,line):
 		self.the_bad_line = line
 	def __str__(self):
 		return repr(self.the_bad_line)
+
+def find_fraction(line):
+	"""In a line of text, find any fractional values reported in that text.
+	"""
+	matches = FRACTION_FINDER.search(line)
+	if matches:
+		match = matches.group(0)
+		fraction = None
+		## We're matching some different kinds of fractions.
+		##If the fraction if preceded by an integer value, we follow this branch:
+		if ' ' in match:
+			#the regex should only match a space if an 
+			##integer before the fraction was found.
+			splits = match.split(' ')
+			if '\\' in splits[1]: ##depending on the slash type...
+				fraction = splits[1].split('\\')
+			elif '/' in splits[1]: ## split things up
+				fraction = splits[1].split('/') 
+			else: ## parse that number and combine the elements into one float!
+				raise NoNumError( "Something went super wrong with the processing of a fractional value!" + match)
+			thenum = float( splits[0] ) + float( fraction[0] ) / float( fraction[1] )  
+			return thenum
+		else:
+			## otherwise just parse the fraction, since it should be by itself.
+			if '\\' in match:
+				fraction = match.split('\\')
+			elif '/' in match:
+				fraction = match.split('/') 
+			else:
+				raise NoNumError( "Something went super wrong with the processing of a fractional value!" + match)
+			thenum =  float( fraction[0] ) / float( fraction[1] )  
+		return thenum
+	else:
+		raise NoNumError( line )
+		"""Return the group if it has found a match. If not: raise our error."""
+
 
 def find_decimal(line):
 	"""In a line of text, find the first double in that line of
@@ -84,6 +120,4 @@ def hash_phone_number(email_message):
 	## This is to prevent people from just stealing the whole list and iterating through
 	## all possible phone numbers to deanonymize the data.
 	## I'm not sure if this is really a problem with our data, since this is all pretty unsensitive.
-
-
 	return   hasher 

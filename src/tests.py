@@ -215,7 +215,85 @@ class TestTools(unittest.TestCase):
  			self.assertEquals(testmsg2, float("2344234000000000.0"))
  		#huzzah!
 
+	def test_find_double2(self):
+		testmsg1 = "Some nonsense and then 2344.234234 let's hope that works."
+		testmsg2 = None
+		try:
+			testmsg2 = find_double( testmsg1 )
+ 		except NoNumError:
+ 			print testmsg2
+ 			self.fail("No float value was found in the line: " + testmsg1 )
+ 		else :
+ 			self.assertEquals(testmsg2, float("2344.234234"))
+ 		#huzzah!
+ 	def test_find_double3(self):
+		testmsg1 = "Some nonsense and then 12.00E2 let's hope that works."
+		testmsg2 = None
+		try:
+			testmsg2 = find_double( testmsg1 )
+ 		except NoNumError:
+ 			print testmsg2
+ 			self.fail("No float value was found in the line: " + testmsg1 )
+ 		else :
+ 			self.assertEquals(testmsg2, float("1200"))
+ 		#huzzah!
+	def test_find_double3(self):
+		testmsg1 = "Some nonsense and then 12E2 let's hope that works."
+		testmsg2 = None
+		try:
+			testmsg2 = find_double( testmsg1 )
+ 		except NoNumError:
+ 			pass
+ 		else :
+ 			self.assertEquals(testmsg2, float("1200"))
+ 		#huzzah!
+ 	def test_find_double4(self):
+		testmsg1 = "Some nonsense and then .5 let's hope that works."
+		testmsg2 = None
+		try:
+			testmsg2 = find_double( testmsg1 )
+ 		except NoNumError:
+ 			print testmsg2
+ 			self.fail("No float value was found in the line: " + testmsg1 )
+ 		else :
+ 			self.assertEquals(testmsg2, .5 )
+ 		#huzzah!
 
+ 	def test_find_fraction(self):
+ 		msg = "The water level is 3 3/4 inches"
+ 		try:
+ 			parsed = find_fraction( msg )
+ 		except NoNumError:
+ 			self.fail("No Fraction Found in " + msg)
+ 		else:
+ 			self.assertEquals(parsed, 3.75)
+
+ 	def test_find_fraction2(self):
+ 		msg = "The water level is 12 2/3 inches"
+ 		try:
+ 			parsed = find_fraction( msg )
+ 		except NoNumError:
+ 			self.fail("No Fraction Found in " + msg)
+ 		else:
+ 			self.assertEquals(parsed, 12.0 + (2/3.0))
+
+	def test_find_fraction3(self):
+ 		msg = "The water level is 1/2 inch"
+ 		try:
+ 			parsed = find_fraction( msg )
+ 		except NoNumError:
+ 			self.fail("No Fraction Found in " + msg)
+ 		else:
+ 			self.assertEquals(parsed, .5)
+
+ 	def test_find_fraction3(self):
+ 		msg = "The water level is 1/2 inch"
+ 		try:
+ 			parsed = find_fraction( msg )
+ 		except NoNumError:
+ 			self.fail("No Fraction Found in " + msg)
+ 		else:
+ 			self.assertEquals(parsed, .5)
 
 if __name__ =='__main__':
 	print "\033[34mSocial.Water Test Suite\033[39m"
