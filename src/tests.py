@@ -22,18 +22,18 @@ class TestTools(unittest.TestCase):
 
 
 
-	def test_find_latlon1(self):
-		self.assertEquals(tools.find_latlon(str(self.double1)), self.double1  )
+	def test_find_decimal1(self):
+		self.assertEquals(tools.find_decimal(str(self.double1)), self.double1  )
 
-	def test_find_latlon2(self):
-		self.assertEquals(tools.find_latlon(str(self.double2)), self.double2  )
+	def test_find_decimal2(self):
+		self.assertEquals(tools.find_decimal(str(self.double2)), self.double2  )
 
-	def test_find_latlon3(self):
+	def test_find_decimal3(self):
 		thistest= "-9000.0000"
 		try:
-			thedouble = tools.find_latlon(thistest)
+			thedouble = tools.find_decimal(thistest)
 			self.fail("No error was thrown while parsing an invalic double")
-		except NoLatLonError as error:
+		except NoNumError as error:
 			#print "We didn't parse the double" ##Good, this worked!
 			pass 
 			''' LOGIC NOTE: This should happen, so unless we hit the
@@ -45,12 +45,12 @@ class TestTools(unittest.TestCase):
 			self.fail("The following value should not have parsed as a double: " + thedouble )
 
 	
-	def test_find_latlon4(self):
+	def test_find_decimal4(self):
 		thistest= "2040"
 		try:
-			thedouble = tools.find_latlon(thistest)
+			thedouble = tools.find_decimal(thistest)
 			self.fail("No error was thrown while parsing an invalic number " + thistest)
-		except NoLatLonError as error:
+		except NoNumError as error:
 			#print "We didn't parse the double" ##Good, this worked!
 			pass 
 			''' LOGICNOTE: This should happen, so unless we hit the
@@ -61,8 +61,8 @@ class TestTools(unittest.TestCase):
 			## Fail! fail like a sophomore!
 			self.fail("The following value should not have parsed as a double: " + thedouble )
 	
-	def test_find_latlon_in_text(self):
-		self.assertEquals(tools.find_latlon(self.line), self.double1  )
+	def test_find_decimal_in_text(self):
+		self.assertEquals(tools.find_decimal(self.line), self.double1  )
 		
 	def test_asciidammit(self):
 		tester = "Here's a string to test! Wooooooop\r\n\t"
@@ -132,7 +132,7 @@ class TestTools(unittest.TestCase):
 		try:
 			thing  = tools.find_phone_number(line)
 			self.fail(" 3223-504-908-0034 shouldn't have parsed as a phone number.")
-		except NoLatLonError as error:
+		except NoNumError as error:
 			
 			pass
 		"""LOGICNOTE: Similar logic to some of the tests above,
@@ -145,7 +145,7 @@ class TestTools(unittest.TestCase):
 		try:
 			thing  = tools.find_phone_number(line)
 			self.fail("-(504) 908-0034 shouldn't have parsed as a phone number.")
-		except NoLatLonError as error:
+		except NoNumError as error:
 			
 			pass
 
@@ -154,7 +154,7 @@ class TestTools(unittest.TestCase):
 		try:
 			thing  = tools.find_phone_number(line)
 			self.fail("04-908-0034 shouldn't have parsed as a phone number.")
-		except NoLatLonError as error:
+		except NoNumError as error:
 			##Woo! it worked.
 			pass
 	"""
@@ -162,7 +162,7 @@ class TestTools(unittest.TestCase):
 		line = "Some phone number: (504)-908-0034 "
 		try:
 			thing  = tools.find_phone_number(line)
-		except NoLatLonError as error:
+		except NoNumError as error:
 			self.fail("(504)-908-0034 should have parsed as a number.")
 			pass
 
@@ -170,7 +170,7 @@ class TestTools(unittest.TestCase):
 		line = "Some phone number: (504) 908-0034 "
 		try:
 			thing  = tools.find_phone_number(line)
-		except NoLatLonError as error:
+		except NoNumError as error:
 			self.fail(" (504) 908-0034 should have parsed as an accceptable number." )
 			pass
 	"""
@@ -178,7 +178,7 @@ class TestTools(unittest.TestCase):
 		line = "Some phone number: (504) 908 0034 "
 		try:
 			thing  = tools.find_phone_number(line)
-		except NoLatLonError as error:
+		except NoNumError as error:
 			self.fail(" 504 908 0034 should have parsed as an accceptable number." )
 			pass
 
@@ -186,8 +186,8 @@ class TestTools(unittest.TestCase):
 		line = "Some phone number: (504) 908-0034 "
 		try:
 			thing  = tools.find_phone_number(line)
-		except NoLatLonError as error:
-			self.fail(" 504 908-0034 should have parsed as an accceptable number." )
+		except NoNumError as error:
+			self.fail(" (504) 908-0034 should have parsed as an accceptable number." )
 			pass
 
 	def test_remove_chars(self):
@@ -203,7 +203,17 @@ class TestTools(unittest.TestCase):
 		testhash = hash_phone_number(testmsg)
 		self.assertEquals( str( testhash ), "9d6feecd-8c04-3264-926e-3da1476e4125")
 
-
+	def test_find_double(self):
+		testmsg1 = "Some nonsense and then 2344.234e12 let's hope that works."
+		testmsg2 = None
+		try:
+			testmsg2 = find_double( testmsg1 )
+ 		except NoNumError:
+ 			print testmsg2
+ 			self.fail("No float value was found in the line: " + testmsg1 )
+ 		else :
+ 			self.assertEquals(testmsg2, float("2344234000000000.0"))
+ 		#huzzah!
 
 
 

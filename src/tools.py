@@ -11,7 +11,7 @@ import base64
 @github github.com/mcgov
 """
 
-ONE_LATLON = re.compile(r"\-?(?<![0-9])[0-9]{1,3}\.[0-9]{1,15}")
+ONE_DECIMAL = re.compile(r"\-?(?<![0-9])[0-9]{1,3}\.[0-9]{1,15}")
 
 A_PHONE_NUMBER = re.compile(r"(?<!\-)(?<![0-9])([0-9]{1,3}\-)?\([0-9]{3}\)[\-| ][0-9]{3}[\-| ][0-9]{4}")
 
@@ -21,29 +21,29 @@ A_PHONE_NUMBER = re.compile(r"(?<!\-)(?<![0-9])([0-9]{1,3}\-)?\([0-9]{3}\)[\-| ]
 ## TODO: This could be better if it searched more specifically...
 ## Maybe only searched for values within the proper ranges. -180,180 90,90
 
-
-ONE_DOUBLE = re.compile(r"\-?(?<![0-9])[0-9]{1,15}\.[0-9]{1,15}([Ee][+\-]?[0-9]{1,15}])")
+#  (?<![0-9])
+ONE_DOUBLE = re.compile(r"\-?(?<![0-9])[0-9]{1,15}\.[0-9]{1,15}[eE][+-]?[0-9]{1,15}")
 ## Searches for a double, between 1-15 leading digits, 1-15 trailing digits.
 ##This regex will also match a float of form 90.2342342234e12412.
 ## The digits are limited to 15 simply to avoid a possible stack overflow while searching through a *really* large number string.
 ## Out in the field, there shouldn't be any floats with 45 significant digits, so if we get to that point then something has gone really wrong.
 
-class NoLatLonError(Exception):
+class NoNumError(Exception):
 	def __init__(self,line):
 		self.the_bad_line = line
 	def __str__(self):
 		return repr(self.the_bad_line)
 
-def find_latlon(line):
+def find_decimal(line):
 	"""In a line of text, find the first double in that line of
 	 text and return it (as a double).
 	"""
-	matches = ONE_LATLON.search(line)
+	matches = ONE_DECIMAL.search(line)
 	if matches:
 		return float( matches.group(0) )
 
 	else:
-		raise NoLatLonError( line )
+		raise NoNumError( line )
 		"""Return the group if it has found a match. If not: raise our error."""
 
 def find_double(line):
@@ -55,7 +55,7 @@ def find_double(line):
 		return float( matches.group(0) )
 
 	else:
-		raise NoLatLonError( line )
+		raise NoNumError( line )
 		"""Return the group if it has found a match. If not: raise our error."""
 
 def find_phone_number(line):
@@ -63,7 +63,7 @@ def find_phone_number(line):
 	if matches:
 		return str( matches.group(0) )
 	else:
-		raise NoLatLonError( line )
+		raise NoNumError( line )
 	"""Pretty similar to these other functions. If we find a number return it, otherwise spit back the line and raise an exception."""
 
 def remove_chars(string,charstoremove):
