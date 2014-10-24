@@ -16,11 +16,8 @@ class TestTools(unittest.TestCase):
 		self.double2 = -32.3454632123
 		self.line = "Here's a line of test text" + str(self.double1) + ":$:" +str(self.double2)
 
-
 	def test_inpardata_creation(self):
 		test = sw.inpardata("testfile.xml")
-
-
 
 	def test_find_decimal1(self):
 		self.assertEquals(tools.find_decimal(str(self.double1)), self.double1  )

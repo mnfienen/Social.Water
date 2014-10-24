@@ -14,6 +14,7 @@ import xml.etree.ElementTree as ET
 # note that not really installing it here - just putting the code in locally
 import fuzz
 import process
+import tools
 
 
 
@@ -68,7 +69,8 @@ class gage_results:
         self.date = list()
         self.datenum = list()
         self.height = list()
-        
+        self.users = list()
+
 class timezone_conversion_schedule:
     def __init__(self,start_month,start_day,end_month,end_day):
         self.dst_start_month = start_month
@@ -136,16 +138,20 @@ class email_reader:
                 dates = np.atleast_1d(indat['Date_and_Time'])
                 gageheight = np.atleast_1d(indat['Gage_Height_ft']) 
                 datenum = np.atleast_1d(indat['POSIX_Stamp'])
+                cid = np.atleast_1d(indat['ContributorID'])
                 try:
                     len_indat = len(indat)
                     for i in xrange(len_indat):
                         self.data[cg].date.append(dates[i])
                         self.data[cg].height.append(gageheight[i])
                         self.data[cg].datenum.append(datenum[i])
+                        self.data[cg].users.append(cid[i])
                 except:
                         self.data[cg].date.append(dates[0])
                         self.data[cg].height.append(gageheight[0])
-                        self.data[cg].datenum.append(datenum[0])            
+                        self.data[cg].datenum.append(datenum[0])
+                        self.data[cg].users.append(cid[0])           
+    
     # login in to the server
     def login(self):
         try:
@@ -193,6 +199,8 @@ class email_reader:
             currmess.date = tz_adjust_STD_DST(currmess.date,self.tzdata)
             currmess.dateout = datetime.strftime(currmess.date,self.outfmt)
             currmess.datestamp = time.mktime(datetime.timetuple(currmess.date)) 
+            
+            
             # now the message bodies
             cm = currmess.body 
             # do a quick check that the message body is only a string - not a list
@@ -258,13 +266,19 @@ class email_reader:
                 currmess.max_prox_ratio = maxratio    
                 currmess.closest_station_match = maxrat_count
                 
+                v= None
                 # rip the float out of the line
-                v = re.findall("[+-]? *(?:\d+(?:\.\d*)|\.\d+)(?:[eE][+-]?\d+)?", currmess.station_line) ##TODO: mm- I have a bad feeling about these regex, make a unit test for these. They might be better but I am 90% that they are too broad.
                 try:
-                    currmess.gageheight = float(v[0])
-                except:
-                    continue
+                    v = tools.find_double(currmess.station_line) ##TODO: mm- I have a bad feeling about these regex, make a unit test for these. They might be better but I am 90% that they are too broad.
+                except tools.NoNumError:
+                    try:
+                        v = tools.find_fraction(currmess.station_line)
+                    except tools.NoNumError as error:
+                        continue
 
+
+                if (v != None):
+                    currmess.gageheight =  v
 
     # for the moment, just re-populate the entire data fields
     def update_data_fields(self,site_params):
@@ -277,6 +291,8 @@ class email_reader:
                     self.data[self.stations[cm.closest_station_match]].date.append(cm.date.strftime(self.outfmt))
                     self.data[self.stations[cm.closest_station_match]].datenum.append(cm.datestamp)
                     self.data[self.stations[cm.closest_station_match]].height.append(cm.gageheight)
+                    self.data[self.stations[cm.closest_station_match]].users.append(cm.fromUUID)
+
                    #mnfdebug ofpdebug.write('%25s%20f%12f%12s\n' %(cm.date.strftime(self.outfmt),cm.datestamp,cm.gageheight,self.stations[cm.closest_station_match]))
         #mnfdebug ofpdebug.close()
     # write all data to CSV files                       
@@ -284,11 +300,12 @@ class email_reader:
     # loop through the stations
         for cg in self.stations:
             ofp = open('../data/' + cg.upper() + '.csv','w')
-            ofp.write('Date and Time,Gage Height (ft),POSIX Stamp\n')
+            ofp.write('Date and Time,Gage Height (ft),POSIX Stamp,ContributorID\n')
             datenum = self.data[cg].datenum # POSIX time stamp fmt for sorting
             dateval = self.data[cg].date
             gageheight = self.data[cg].height
-            outdata = np.array(zip(datenum,dateval,gageheight))
+            userid = self.data[cg].users
+            outdata = np.array(zip(datenum,dateval,gageheight,userid))
             if len(outdata) == 0:
                 print '%s has no measurements yet' %(cg)
             else:
@@ -296,7 +313,7 @@ class email_reader:
                 indies = np.searchsorted(outdata[:,0],unique_dates)
                 final_outdata = outdata[indies,:]
                 for i in xrange(len(final_outdata)):
-                    ofp.write(final_outdata[i,1] + ',' + str(final_outdata[i,2]) + ',' + str(final_outdata[i,0]) + '\n')
+                    ofp.write(final_outdata[i,1] + ',' + str(final_outdata[i,2]) + ',' + str(final_outdata[i,0]) + ','+ str(final_outdata[i,3]) + '\n')
             ofp.close()
                 
     # plot the results in a simple time series using Dygraphs javascript (no Flash ) option
@@ -376,7 +393,8 @@ class email_message:
         self.closest_station_match = ''
         self.station_line = ''
         self.gageheight = -99999
-        self.fromUUID = None
+
+        self.fromUUID = tools.hash_phone_number( self )
         
 
         
