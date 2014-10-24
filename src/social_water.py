@@ -315,7 +315,27 @@ class email_reader:
                 for i in xrange(len(final_outdata)):
                     ofp.write(final_outdata[i,1] + ',' + str(final_outdata[i,2]) + ',' + str(final_outdata[i,0]) + ','+ str(final_outdata[i,3]) + '\n')
             ofp.close()
-                
+
+    def count_contributions(self):
+        if os.path.exists("../data"):
+            totals = dict()
+            for cg in self.stations:
+                curfile = open('../data/' + cg.upper() + '.csv','r')
+                indat = np.genfromtxt('../data/' + cg.upper() + '.csv',dtype=None,delimiter=',',names=True)
+                dates = np.atleast_1d(indat['Date_and_Time'])
+                gageheight = np.atleast_1d(indat['Gage_Height_ft']) 
+                datenum = np.atleast_1d(indat['POSIX_Stamp'])
+                cid = np.atleast_1d(indat['ContributorID'])
+                for user in cid:
+                    if str(user) in totals:
+                        totals[str(user)] = totals[str(user)] +  1
+                    else:
+                        totals[str(user)] = 1
+            for key in totals:
+                print key, totals[key]
+
+
+
     # plot the results in a simple time series using Dygraphs javascript (no Flash ) option
     def plot_results_dygraphs(self):
         # loop through the stations
@@ -395,7 +415,9 @@ class email_message:
         self.gageheight = -99999
 
         self.fromUUID = tools.hash_phone_number( self )
-        
+
+
+
 
         
            
@@ -430,3 +452,6 @@ class InvalidBounds(Exception):
         self.station = statID
     def __str__(self):
         return('\n\nStation "%s" not in the list of stations above.\nCheck for consistency.' %(self.station))
+
+
+

@@ -70,6 +70,6 @@ else:
     print 'plot the results using dygraphs'
     allmsg.plot_results_dygraphs()
     
-    
+    allmsg.count_contributions()
     
 print '\nAll done for now!'
