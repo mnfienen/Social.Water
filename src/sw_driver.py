@@ -51,6 +51,8 @@ if len(allmsg.msgids[0].split()) == 0:
     print 'No new messages: quitting now'
 else:
     
+    ##load up our old contributor data
+    allmsg.count_contributions()
     print 'parsing messages'
     # parse the messages
     allmsg.parsemail()
@@ -70,6 +72,9 @@ else:
     print 'plot the results using dygraphs'
     allmsg.plot_results_dygraphs()
     
-    allmsg.count_contributions()
+   
+    print 'write out new contributor data'
+    allmsg.write_contributions()
+    
     
 print '\nAll done for now!'

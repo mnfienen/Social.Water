@@ -113,10 +113,7 @@ def hash_phone_number(email_message):
 	identifier = find_phone_number(email_message.header )
 	identifier = remove_chars(identifier, "()- ") #remove all the chars in the second string 
 	hasher = uuid.uuid3( uuid.NAMESPACE_OID, identifier )
-	## There is a vulnerability where this identifier should first be 'salted' before hashed.
-	## This is to prevent people from just stealing the whole list and iterating through
-	## all possible phone numbers to deanonymize the data.
-	## I'm not sure if this is really a problem with our data, since this is all pretty unsensitive.
+	
 	return hasher 
 
 def hash_number(header):
@@ -131,10 +128,16 @@ def hash_number(header):
 
 def log_bad_contribution(email_message, reader):
 
-	number = str( email_message.header )
-	remove_chars(number, "()- SMfrom")
+	number = str( email_message.header ).lower()
+
+	number = remove_chars(number, "()- smsfrom")
+	print "HASHING2: " + number,
+	
 	hasher = uuid.uuid3( uuid.NAMESPACE_OID, number ) 
+
 	userid = ( str(hasher) )
+	print "TO: " + str(hasher)
+
 	if userid in reader.totals:
 		reader.totals[userid] = ( reader.totals[userid][0], reader.totals[userid][1]+1, reader.totals[userid][2] + 1 )
 		

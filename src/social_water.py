@@ -9,7 +9,7 @@ import os
 import csv
 import string
 import xml.etree.ElementTree as ET
-
+import uuid
 # fuzzywuzzy is a fuzzy string matching code from:
 # https://github.com/seatgeek/fuzzywuzzy
 # note that not really installing it here - just putting the code in locally
@@ -280,7 +280,7 @@ class email_reader:
                 v= None
                 # rip the float out of the line
                 try:
-                    v = tools.find_double(currmess.station_line) ##TODO: mm- I have a bad feeling about these regex, make a unit test for these. They might be better but I am 90% that they are too broad.
+                    v = tools.find_double(currmess.station_line) 
                     #print "found val:" + str(v)
                 except tools.NoNumError: #first fail, attempt another!
                     try:
@@ -289,13 +289,20 @@ class email_reader:
                         ## log the line that was bad.
                     except tools.NoNumError:
                         #print "Found bad line: " + currmess.station_line
+                        ##Bad entry, log it.
                         tools.log_bad_contribution(currmess, self)
                 if (v != None):
                     currmess.gageheight =  v
+                    userid = currmess.fromUUID
+                    if userid in self.totals:
+                        self.totals[userid] = ( self.totals[userid][0], self.totals[userid][1]+1, self.totals[userid][2] )
+                    else:
+                        self.totals[userid] = ( currmess.date , 1 , 0 )
+
 
             else:
-                ##this message has no readable gauge, so we attempt to log it as a bad message.
-                print "Bad Message" + str(currmess.header)
+                ##this message has no readable gauge, so we log it as a bad message.
+                ##print "Bad Message" + str(currmess.header)
                 tools.log_bad_contribution(currmess, self)
                     
                 
@@ -335,34 +342,53 @@ class email_reader:
                 indies = np.searchsorted(outdata[:,0],unique_dates)
                 final_outdata = outdata[indies,:]
                 for i in xrange(len(final_outdata)):
+                    
                     ofp.write(final_outdata[i,1] + ',' + str(final_outdata[i,2]) + ',' + str(final_outdata[i,0]) + ','+ str(final_outdata[i,3]) + '\n')
             ofp.close()
 
     def count_contributions(self):
         if os.path.exists("../data"):
-            for cg in self.stations:
-                curfile = open( '../data/' + cg.upper() + '.csv','r' )
-                #print "opening " + str( curfile )
-                reader = csv.reader( curfile, delimiter=',' )
-                totalfile = open('../data/contributionTotals.csv','w')
-                #print "writing to " + str( totalfile )
-                totalfile.write('contributorID,firstContributionDate,totalContributions,badContibutions\n')
+            
+                ## read in last time's totals
+            if os.path.exists('../data/contributionTotals.csv'):
+                totalfile = open('../data/contributionTotals.csv','r')
+                totalreader = csv.reader( totalfile, delimiter=',' )
                 firstrow = True
-                for row in reader:
+                for user in totalreader:
                     if not firstrow:
-                        userid = row[3]
-                        date  = row[0]
-                        if userid in self.totals:
-                            self.totals[userid] = ( self.totals[userid][0], self.totals[userid][1] +  1 , self.totals[userid][2] )
+                        #print user
+                        self.totals[user[0]] = (user[1] , int( user[3] ) , int( user[3] ) )
+                    firstrow = False
+                totalfile.close()
+            
+                for cg in self.stations:
+                    curfile = open( '../data/' + cg.upper() + '.csv','r' )
+                    #print "opening " + str( curfile )
+                    reader = csv.reader( curfile, delimiter=',' )
+                    firstrow = True
+                    for row in reader:
+                        if not firstrow:
+                            userid = row[3]
+                            date  = row[0]
+                            if userid in self.totals:
+                                self.totals[userid] = ( self.totals[userid][0], self.totals[userid][1] +  1 , self.totals[userid][2] )
+                            else:
+                                self.totals[userid] = ( date, 1 , 0)
                         else:
-                            self.totals[userid] = ( date, 1 , 0)
-                    else:
-                        firstrow = False
-            for key in self.totals:
-                if key != "NoPhoneNumberFound":
-                    totalfile.write( str( key ) + ',' + str( self.totals[key][0] ) + ',' + str( self.totals[key][1] ) + ',' + str( self.totals[key][2] ) + '\n' ) 
-            totalfile.close()
-            curfile.close()
+                            firstrow = False
+                    curfile.close()
+                    
+    def write_contributions(self):
+        totalfile = open('../data/contributionTotals.csv','w')
+            #print "writing to " + str( totalfile )
+        totalfile.write('contributorID,firstContributionDate,totalContributions,badContibutions\n')
+            
+
+        for key in self.totals:
+            print key
+            if key != "NoPhoneNumberFound":
+                totalfile.write( str( key ) + ',' + str( self.totals[key][0] ) + ',' + str( self.totals[key][1] ) + ',' + str( self.totals[key][2] ) + '\n' ) 
+        totalfile.close()
 
     # plot the results in a simple time series using Dygraphs javascript (no Flash ) option
     def plot_results_dygraphs(self):
@@ -441,10 +467,13 @@ class email_message:
         self.closest_station_match = ''
         self.station_line = ''
         self.gageheight = -99999
-        try:
-            self.fromUUID = tools.hash_phone_number( self )
-        except tools.NoNumError as error:
-            self.fromUUID = "NoPhoneNumberFound"
+       
+        number = str( self.header ).lower()
+        number = tools.remove_chars(number, "()- smfrom")
+        print "HASHING1: " + number,
+        hasher = uuid.uuid3( uuid.NAMESPACE_OID, number ) 
+        self.fromUUID=  ( str(hasher) )
+        print "TO: " + str(hasher) 
 
 
 
