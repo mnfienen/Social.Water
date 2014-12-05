@@ -6,6 +6,7 @@ import time
 import base64
 import sys
 import os
+import csv
 import string
 import xml.etree.ElementTree as ET
 
@@ -44,6 +45,7 @@ class inpardata:
         stats = inpars.findall('.//stations/station')
         for cstat in stats:
             self.stations_and_bounds[cstat.text]=cstat.attrib
+            ##print self.stations_and_bounds[cstat.text]['lbound']
             self.stations_and_bounds[cstat.text]['lbound'] = float(self.stations_and_bounds[cstat.text]['lbound'])
             self.stations_and_bounds[cstat.text]['ubound'] = float(self.stations_and_bounds[cstat.text]['ubound'])
             self.statnums.append(int(re.findall("\d+",cstat.text)[0]))
@@ -127,6 +129,10 @@ class email_reader:
         self.tzdata = timezone_conversion_data(site_params)
         self.minstatnum = site_params.minstatnum
         self.maxstatnum = site_params.maxstatnum
+        self.totals = dict() ## track user contributions
+        ## will contain a string user id # followed by a tuple of strings and ints.
+        ##( date of first contribution, total contribution count, bad contributions)
+
         
 
     # read the previous data from the CSV files
@@ -184,7 +190,9 @@ class email_reader:
                 print '-',
                 sys.stdout.flush()
             resp, data = self.m.fetch(cm, "(RFC822)")
+                
             msg = email.message_from_string(data[0][1])  #TODO: check this array for misalignment of text from email vs sms
+            print msg['Subject']
             if 'sms from' in msg['Subject'].lower(): #same story here
                 self.messages.append(email_message(msg['Date'],msg['Subject'],msg.get_payload()))  ##
         print '-'
@@ -219,7 +227,8 @@ class email_reader:
             for citem in site_params.msg_ids:
                 if citem.lower() in line:
                     currmess.is_gage_msg = True 
-                       
+                
+
             if currmess.is_gage_msg == True:
                 matched = False # set a flag to see if a match has been found
                 # now check for the obvious - that the exact station number is in the line
@@ -234,6 +243,7 @@ class email_reader:
                         line = re.sub(cs.lower(),'',line)                  
                         currmess.station_line = line                        
                         break
+
                 # if no exact match found, get fuzzy!
                 if matched == False:
                     # we will test the line, but we need to remove some terms using regex substitutions
@@ -244,6 +254,7 @@ class email_reader:
                     # python-and-regex-question-extract-float-double-value
                     currmess.station_line = line
                     line = re.sub("[+-]? *(?:\d+(?:\.\d*)|\.\d+)(?:[eE][+-]?\d+)?",'', line)  ## TODO: fully read this out, maybe rewrite this to be more specific and not use *'s
+                    ##print line
                     tmp_ints = re.findall("\d+",line)
                     remaining_ints = []
                     for cval in tmp_ints:
@@ -270,15 +281,24 @@ class email_reader:
                 # rip the float out of the line
                 try:
                     v = tools.find_double(currmess.station_line) ##TODO: mm- I have a bad feeling about these regex, make a unit test for these. They might be better but I am 90% that they are too broad.
-                except tools.NoNumError:
+                    #print "found val:" + str(v)
+                except tools.NoNumError: #first fail, attempt another!
                     try:
-                        v = tools.find_fraction(currmess.station_line)
-                    except tools.NoNumError as error:
-                        continue
-
-
+                        v = tools.find_fraction( currmess.station_line ) 
+                        #print "found frac val:" + str(v)
+                        ## log the line that was bad.
+                    except tools.NoNumError:
+                        #print "Found bad line: " + currmess.station_line
+                        tools.log_bad_contribution(currmess, self)
                 if (v != None):
                     currmess.gageheight =  v
+
+            else:
+                ##this message has no readable gauge, so we attempt to log it as a bad message.
+                print "Bad Message" + str(currmess.header)
+                tools.log_bad_contribution(currmess, self)
+                    
+                
 
     # for the moment, just re-populate the entire data fields
     def update_data_fields(self,site_params):
@@ -292,6 +312,7 @@ class email_reader:
                     self.data[self.stations[cm.closest_station_match]].datenum.append(cm.datestamp)
                     self.data[self.stations[cm.closest_station_match]].height.append(cm.gageheight)
                     self.data[self.stations[cm.closest_station_match]].users.append(cm.fromUUID)
+                    #print cm.fromUUID
 
                    #mnfdebug ofpdebug.write('%25s%20f%12f%12s\n' %(cm.date.strftime(self.outfmt),cm.datestamp,cm.gageheight,self.stations[cm.closest_station_match]))
         #mnfdebug ofpdebug.close()
@@ -306,6 +327,7 @@ class email_reader:
             gageheight = self.data[cg].height
             userid = self.data[cg].users
             outdata = np.array(zip(datenum,dateval,gageheight,userid))
+            ##print outdata
             if len(outdata) == 0:
                 print '%s has no measurements yet' %(cg)
             else:
@@ -318,23 +340,29 @@ class email_reader:
 
     def count_contributions(self):
         if os.path.exists("../data"):
-            totals = dict()
             for cg in self.stations:
-                curfile = open('../data/' + cg.upper() + '.csv','r')
-                indat = np.genfromtxt('../data/' + cg.upper() + '.csv',dtype=None,delimiter=',',names=True)
-                dates = np.atleast_1d(indat['Date_and_Time'])
-                gageheight = np.atleast_1d(indat['Gage_Height_ft']) 
-                datenum = np.atleast_1d(indat['POSIX_Stamp'])
-                cid = np.atleast_1d(indat['ContributorID'])
-                for user in cid:
-                    if str(user) in totals:
-                        totals[str(user)] = totals[str(user)] +  1
+                curfile = open( '../data/' + cg.upper() + '.csv','r' )
+                #print "opening " + str( curfile )
+                reader = csv.reader( curfile, delimiter=',' )
+                totalfile = open('../data/contributionTotals.csv','w')
+                #print "writing to " + str( totalfile )
+                totalfile.write('contributorID,firstContributionDate,totalContributions,badContibutions\n')
+                firstrow = True
+                for row in reader:
+                    if not firstrow:
+                        userid = row[3]
+                        date  = row[0]
+                        if userid in self.totals:
+                            self.totals[userid] = ( self.totals[userid][0], self.totals[userid][1] +  1 , self.totals[userid][2] )
+                        else:
+                            self.totals[userid] = ( date, 1 , 0)
                     else:
-                        totals[str(user)] = 1
-            for key in totals:
-                print key, totals[key]
-
-
+                        firstrow = False
+            for key in self.totals:
+                if key != "NoPhoneNumberFound":
+                    totalfile.write( str( key ) + ',' + str( self.totals[key][0] ) + ',' + str( self.totals[key][1] ) + ',' + str( self.totals[key][2] ) + '\n' ) 
+            totalfile.close()
+            curfile.close()
 
     # plot the results in a simple time series using Dygraphs javascript (no Flash ) option
     def plot_results_dygraphs(self):
@@ -413,8 +441,10 @@ class email_message:
         self.closest_station_match = ''
         self.station_line = ''
         self.gageheight = -99999
-
-        self.fromUUID = tools.hash_phone_number( self )
+        try:
+            self.fromUUID = tools.hash_phone_number( self )
+        except tools.NoNumError as error:
+            self.fromUUID = "NoPhoneNumberFound"
 
 
 

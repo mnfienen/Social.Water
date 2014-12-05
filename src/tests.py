@@ -8,6 +8,7 @@ class email_stub():
 	def __init__(self):
 		self.header = "sms from (504) 908-0034 test header"
 
+ 
 
 class TestTools(unittest.TestCase):
 
@@ -171,14 +172,7 @@ class TestTools(unittest.TestCase):
 			self.fail(" (504) 908-0034 should have parsed as an accceptable number." )
 			pass
 	"""
-	def test_find_phone_with_spaces(self):
-		line = "Some phone number: (504) 908 0034 "
-		try:
-			thing  = tools.find_phone_number(line)
-		except NoNumError as error:
-			self.fail(" 504 908 0034 should have parsed as an accceptable number." )
-			pass
-
+	
 	def test_find_phone_with_spaces_and_dashes(self):
 		line = "Some phone number: (504) 908-0034 "
 		try:
@@ -186,6 +180,15 @@ class TestTools(unittest.TestCase):
 		except NoNumError as error:
 			self.fail(" (504) 908-0034 should have parsed as an accceptable number." )
 			pass
+	def test_find_phone_with_spaces_and_dashes(self):
+		line = "SMS from (585) 370-7180 "
+		try:
+			thing  = tools.find_phone_number(line)
+		except NoNumError as error:
+			self.fail(" (504) 908-0034 should have parsed as an accceptable number." )
+			pass
+			
+
 
 	def test_remove_chars(self):
 		string = "Here's a string and we will remove () some ';. chars"

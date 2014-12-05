@@ -13,13 +13,10 @@ import base64
 
 ONE_DECIMAL = re.compile(r"\-?(?<![0-9])[0-9]{1,3}\.[0-9]{1,15}")
 
-A_PHONE_NUMBER = re.compile(r"(?<!\-)(?<![0-9])([0-9]{1,3}\-)?\([0-9]{3}\)[\-| ][0-9]{3}[\-| ][0-9]{4}")
+A_PHONE_NUMBER = re.compile(r"(?<!\-)(?<![0-9])\([0-9]{3}\) [0-9]{3}\-[0-9]{4}")
 ## Finds a double/float style number, between one and three leading digits,
-##Up to 15 trailing digits. 
-## TODO: This could be better if it searched more specifically...
-## Maybe only searched for values within the proper ranges. -180,180 90,90
 
-#  (?<![0-9])
+
 ONE_DOUBLE = re.compile(r"\-?(?<![0-9])([0-9]{1,15})?\.[0-9]{1,15}([eE][+-]?[0-9]{1,15})?")
 ## Searches for a double, between 1-15 leading digits, 1-15 trailing digits.
 ##This regex will also match a float of form 90.2342342234e12412.
@@ -120,4 +117,28 @@ def hash_phone_number(email_message):
 	## This is to prevent people from just stealing the whole list and iterating through
 	## all possible phone numbers to deanonymize the data.
 	## I'm not sure if this is really a problem with our data, since this is all pretty unsensitive.
-	return   hasher 
+	return hasher 
+
+def hash_number(header):
+	identifier = find_phone_number(header )
+	identifier = remove_chars(identifier, "()- ") #remove all the chars in the second string 
+	hasher = uuid.uuid3( uuid.NAMESPACE_OID, identifier )
+	## There is a vulnerability where this identifier should first be 'salted' before hashed.
+	## This is to prevent people from just stealing the whole list and iterating through
+	## all possible phone numbers to deanonymize the data.
+	## I'm not sure if this is really a problem with our data, since this is all pretty unsensitive.
+	return hasher 
+
+def log_bad_contribution(email_message, reader):
+
+	number = str( email_message.header )
+	remove_chars(number, "()- SMfrom")
+	hasher = uuid.uuid3( uuid.NAMESPACE_OID, number ) 
+	userid = ( str(hasher) )
+	if userid in reader.totals:
+		reader.totals[userid] = ( reader.totals[userid][0], reader.totals[userid][1]+1, reader.totals[userid][2] + 1 )
+		
+	else:
+		reader.totals[userid] = ( email_message.date , 1, 1 )
+	
+	print reader.totals[userid]
