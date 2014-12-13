@@ -357,26 +357,27 @@ class email_reader:
                 for user in totalreader:
                     if not firstrow:
                         #print user
-                        self.totals[user[0]] = (user[1] , int( user[3] ) , int( user[3] ) )
+                        self.totals[user[0]] = (user[1] , int( user[2] ) , int( user[3] ) )
                     firstrow = False
                 totalfile.close()
             else:
                 for cg in self.stations:
-                    curfile = open( '../data/' + cg.upper() + '.csv','r' )
-                    #print "opening " + str( curfile )
-                    reader = csv.reader( curfile, delimiter=',' )
-                    firstrow = True
-                    for row in reader:
-                        if not firstrow:
-                            userid = row[3]
-                            date  = row[0]
-                            if userid in self.totals:
-                                self.totals[userid] = ( self.totals[userid][0], self.totals[userid][1] +  1 , self.totals[userid][2] )
+                    if os.path.exists('../data/' + cg.upper() + '.csv'):
+                        curfile = open( '../data/' + cg.upper() + '.csv','r' )
+                        #print "opening " + str( curfile )
+                        reader = csv.reader( curfile, delimiter=',' )
+                        firstrow = True
+                        for row in reader:
+                            if not firstrow:
+                                userid = row[3]
+                                date  = row[0]
+                                if userid in self.totals:
+                                    self.totals[userid] = ( self.totals[userid][0], self.totals[userid][1] +  1 , self.totals[userid][2] )
+                                else:
+                                    self.totals[userid] = ( date, 1 , 0)
                             else:
-                                self.totals[userid] = ( date, 1 , 0)
-                        else:
-                            firstrow = False
-                    curfile.close()
+                                firstrow = False
+                        curfile.close()
                     
     def write_contributions(self):
         totalfile = open('../data/contributionTotals.csv','w')
