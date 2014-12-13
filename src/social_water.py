@@ -360,7 +360,7 @@ class email_reader:
                         self.totals[user[0]] = (user[1] , int( user[3] ) , int( user[3] ) )
                     firstrow = False
                 totalfile.close()
-            
+            else:
                 for cg in self.stations:
                     curfile = open( '../data/' + cg.upper() + '.csv','r' )
                     #print "opening " + str( curfile )
@@ -470,10 +470,10 @@ class email_message:
        
         number = str( self.header ).lower()
         number = tools.remove_chars(number, "()- smfrom")
-        print "HASHING1: " + number,
+        ##print "HASHING1: " + number,
         hasher = uuid.uuid3( uuid.NAMESPACE_OID, number ) 
         self.fromUUID=  ( str(hasher) )
-        print "TO: " + str(hasher) 
+        ##print "TO: " + str(hasher) 
 
 
 
