@@ -14,16 +14,17 @@ import base64
 ONE_DECIMAL = re.compile(r"\-?(?<![0-9])[0-9]{1,3}\.[0-9]{1,15}")
 
 A_PHONE_NUMBER = re.compile(r"(?<!\-)(?<![0-9])\([0-9]{3}\) [0-9]{3}\-[0-9]{4}")
-## Finds a double/float style number, between one and three leading digits,
+## Pull a phone number from a line of text. This only includes of the form (504) 908-1458. It will not match international numbers.
 
 
 ONE_DOUBLE = re.compile(r"\-?(?<![0-9])([0-9]{1,15})?\.[0-9]{1,15}([eE][+-]?[0-9]{1,15})?")
 ## Searches for a double, between 1-15 leading digits, 1-15 trailing digits.
 ##This regex will also match a float of form 90.2342342234e12412.
 ## The digits are limited to 15 simply to avoid a possible stack overflow while searching through a *really* large number string.
-## Out in the field, there shouldn't be any floats with 45 significant digits, so if we get to that point then something has gone really wrong.
+## There shouldn't be any floats with 45 significant digits, so if we get to that point then something has gone really wrong.
 
 FRACTION_FINDER = re.compile(r"([0-9]{0,9}(?<=[0-9]) )?[0-9]{0,9}[/\\][0-9]{0,9}")
+"""Regex for finding a number involving a fraction."""
 
 class NoNumError(Exception):
 	def __init__(self,line):
@@ -65,7 +66,6 @@ def find_fraction(line):
 	else:
 		raise NoNumError( line )
 		"""Return the group if it has found a match. If not: raise our error."""
-
 
 def find_decimal(line):
 	"""In a line of text, find the first double in that line of
@@ -120,10 +120,7 @@ def hash_number(header):
 	identifier = find_phone_number(header )
 	identifier = remove_chars(identifier, "()- ") #remove all the chars in the second string 
 	hasher = uuid.uuid3( uuid.NAMESPACE_OID, identifier )
-	## There is a vulnerability where this identifier should first be 'salted' before hashed.
-	## This is to prevent people from just stealing the whole list and iterating through
-	## all possible phone numbers to deanonymize the data.
-	## I'm not sure if this is really a problem with our data, since this is all pretty unsensitive.
+	## assign a unique user identifier
 	return hasher 
 
 def log_bad_contribution(email_message, reader):

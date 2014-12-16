@@ -253,7 +253,7 @@ class email_reader:
                     # using regex code from: http://stackoverflow.com/questions/385558/
                     # python-and-regex-question-extract-float-double-value
                     currmess.station_line = line
-                    line = re.sub("[+-]? *(?:\d+(?:\.\d*)|\.\d+)(?:[eE][+-]?\d+)?",'', line)  ## TODO: fully read this out, maybe rewrite this to be more specific and not use *'s
+                    line = re.sub("[+-]? *(?:\d+(?:\.\d*)|\.\d+)(?:[eE][+-]?\d+)?",'', line)
                     ##print line
                     tmp_ints = re.findall("\d+",line)
                     remaining_ints = []
