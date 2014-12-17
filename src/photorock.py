@@ -4,6 +4,9 @@ PhotoRock!
 This object will take a photo and attempt to extract some text
 from it using Tesseract OCR, ImageMagick, and PIL.
 
+This class is actually pretty garbagey, and probably won't enter into use.
+I'm leaving it for now though!
+
 @Author Matthew G. McGovern
 @email matthewgmcgovern@gmail.com
 =====================================================================
@@ -17,6 +20,8 @@ import Image
 import ImageFilter
 import tools
 import re
+
+
 class PhotoRocker( ):
     def __init__( self, image ):
         call(["convert", "-normalize", "-auto-gamma", "-auto-level",  image, "edit.jpg" ])
@@ -30,7 +35,7 @@ class PhotoRocker( ):
 
 if __name__ == "__main__":
     floatpattern = re.compile(r'(?<![0-9])([0-9]\.[0-9][0-9])(?![0-9])')
-    p= PhotoRocker("./attachments/img10.jpg")
+    p= PhotoRocker("./attachments/img13.jpg")
     p.oimg = Image.open("edit.jpg").filter(ImageFilter.SHARPEN)
 
     arr = p.oimg.getextrema()[0]
