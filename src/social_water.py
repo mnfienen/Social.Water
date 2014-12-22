@@ -144,19 +144,16 @@ class email_reader:
                 dates = np.atleast_1d(indat['Date_and_Time'])
                 gageheight = np.atleast_1d(indat['Gage_Height_ft']) 
                 datenum = np.atleast_1d(indat['POSIX_Stamp'])
-                cid = np.atleast_1d(indat['ContributorID'])
                 try:
                     len_indat = len(indat)
                     for i in xrange(len_indat):
                         self.data[cg].date.append(dates[i])
                         self.data[cg].height.append(gageheight[i])
                         self.data[cg].datenum.append(datenum[i])
-                        self.data[cg].users.append(cid[i])
                 except:
                         self.data[cg].date.append(dates[0])
                         self.data[cg].height.append(gageheight[0])
                         self.data[cg].datenum.append(datenum[0])
-                        self.data[cg].users.append(cid[0])           
     
     # login in to the server
     def login(self):
@@ -328,7 +325,7 @@ class email_reader:
     # loop through the stations
         for cg in self.stations:
             ofp = open('../data/' + cg.upper() + '.csv','w')
-            ofp.write('Date and Time,Gage Height (ft),POSIX Stamp,ContributorID\n')
+            ofp.write('Date and Time,Gage Height (ft),POSIX Stamp\n')
             datenum = self.data[cg].datenum # POSIX time stamp fmt for sorting
             dateval = self.data[cg].date
             gageheight = self.data[cg].height
@@ -343,13 +340,15 @@ class email_reader:
                 final_outdata = outdata[indies,:]
                 for i in xrange(len(final_outdata)):
                     
-                    ofp.write(final_outdata[i,1] + ',' + str(final_outdata[i,2]) + ',' + str(final_outdata[i,0]) + ','+ str(final_outdata[i,3]) + '\n')
+                    ofp.write(final_outdata[i,1] + ',' + str(final_outdata[i,2]) + ',' + str(final_outdata[i,0]) + '\n')
             ofp.close()
 
     def count_contributions(self):
         if os.path.exists("../data"):
-            
                 ## read in last time's totals
+            if not os.path.exists("../data/"+ self.stations[0][:2] +"1000.csv" ):
+                self.email_scope = "ALL" #if we don't have our data yet, we need to run all of the messages.
+
             if os.path.exists('../data/contributionTotals.csv'):
                 totalfile = open('../data/contributionTotals.csv','r')
                 totalreader = csv.reader( totalfile, delimiter=',' )
@@ -361,30 +360,12 @@ class email_reader:
                     firstrow = False
                 totalfile.close()
             else:
-                for cg in self.stations:
-                    if os.path.exists('../data/' + cg.upper() + '.csv'):
-                        curfile = open( '../data/' + cg.upper() + '.csv','r' )
-                        #print "opening " + str( curfile )
-                        reader = csv.reader( curfile, delimiter=',' )
-                        firstrow = True
-                        for row in reader:
-                            if not firstrow:
-                                userid = row[3]
-                                date  = row[0]
-                                if userid in self.totals:
-                                    self.totals[userid] = ( self.totals[userid][0], self.totals[userid][1] +  1 , self.totals[userid][2] )
-                                else:
-                                    self.totals[userid] = ( date, 1 , 0)
-                            else:
-                                firstrow = False
-                        curfile.close()
+                self.email_scope = "ALL" # Also if this is the first run,
                     
     def write_contributions(self):
         totalfile = open('../data/contributionTotals.csv','w')
             #print "writing to " + str( totalfile )
-        totalfile.write('contributorID,firstContributionDate,totalContributions,badContibutions\n')
-            
-
+        totalfile.write('contributorID,firstContributionDate,totalContributions,badContibutions\n') 
         for key in self.totals:
             print key
             if key != "NoPhoneNumberFound":

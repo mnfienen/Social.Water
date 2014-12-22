@@ -32,7 +32,7 @@ allmsg = email_reader(site_params)
 print 'Reading previous data from CSV files'
 allmsg.read_CSV_data()
 
-
+allmsg.count_contributions()
 
 print 'Attempting to log on to gmail account:\n\t%s' %(site_params.usr)
 # login to the account
@@ -52,7 +52,7 @@ if len(allmsg.msgids[0].split()) == 0:
 else:
     
     ##load up our old contributor data
-    allmsg.count_contributions()
+    
     print 'parsing messages'
     # parse the messages
     allmsg.parsemail()
