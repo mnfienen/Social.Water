@@ -1,3 +1,5 @@
+#!/util/python-2.7.3/bin/python
+
 from social_water import *
 import os
 import base64
@@ -49,6 +51,7 @@ allmsg.checkmail()
 # rewriting the charts and CSV files
 if len(allmsg.msgids[0].split()) == 0:
     print 'No new messages: quitting now'
+    allmsg.logout()
 else:
     
     ##load up our old contributor data
@@ -76,5 +79,8 @@ else:
     print 'write out new contributor data'
     allmsg.write_contributions()
     
+    print "logging out!"
+    allmsg.logout()
+
     
 print '\nAll done for now!'

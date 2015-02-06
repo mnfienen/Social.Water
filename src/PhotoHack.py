@@ -23,6 +23,11 @@ class PhotoHack():
 		#show_img(self.edgeimg) ## optional print
 		self.contours = None
 		self.maskedimg = None
+		self.exterior_isolated = None
+		self.avg_inside = None
+		self.slope_inside = None
+		self.boxblank = None   ##mask we'll use to extract just the image inside the box.
+
 
 	def find_contours(self):
 		#takes in an image processed with edge detection and runs the function for finding contours.
@@ -40,8 +45,9 @@ class PhotoHack():
 				if len(approx) == 4 :
 					self.squares.append(approx)
 		else:
-			print "Error: Run find_countours first."
+			print "Error: Run find_contours first."
 			return None
+
 	def find_largest_square(self):
 		maxarea = 0	
 		the_biggest_square = None
@@ -51,38 +57,82 @@ class PhotoHack():
 				maxarea = squarea
 				the_biggest_square = square
 		return the_biggest_square
+
 	def snip_square(self, contour):
 		"""Feed a contour, this will remove it and return just what is inside the contour.
 		"""
-
+		###############################################
+		## Isolate everything inside the largest box in the picture
 		blank = np.zeros(self.img.shape, np.uint8)
-		cv2.drawContours(blank, [contour], 0, (255,255,255) , -1 )
-
+		cv2.drawContours( blank, [contour], 0, (255,255,255) , -1 )
 		#show_img(blank)
+		self.img[:,:,1] = 0
 		self.maskedimg = cv2.bitwise_and(self.img, blank )
-		blank = cv2.cvtColor(blank, cv.CV_RGB2GRAY)
-		show_img(self.maskedimg)
-		rect = cv2.boundingRect(contour)
 
-		mean = cv2.mean(self.maskedimg , blank)
-		print mean
+		self.boxblank = cv2.cvtColor(self.maskedimg, cv.CV_RGB2GRAY) #we'll want to keep the mask at this point
+
+		##show image, and get the mean value inside the box.
+		#show_img(self.maskedimg)
+		rect = cv2.boundingRect(contour)
+		mean_inside = cv2.mean( self.maskedimg , self.boxblank )
+
+		return self.maskedimg , mean_inside
+
+		"""
+
+		 ## get the mean values inside the box
+		print "Interior: ", mean1
+		
+		##############################################
+		## Now let's isolate everything BUT the box.
+		invmaskedimg = np.zeros(self.img.shape, np.uint8) #blank canvas
+		cv2.drawContours(invmaskedimg, [contour], 0, (255,255,255) , -1 ) #draw our shape.
+		invmaskedimg = cv2.bitwise_not(invmaskedimg) #invert everything
+		self.exterior_isolated = cv2.bitwise_and(self.img, invmaskedimg) 
+		#  run an AND, removing only the interior of the box.
+
+		
+		invmaskedimg = cv2.cvtColor(invmaskedimg, cv.CV_RGB2GRAY) #convert the mask to 1 channel
+		mean2 = cv2.mean( self.exterior_isolated , invmaskedimg )
+		
+		print "Exterior: " , mean2
+		print mean1[0] - mean2[0] , mean1[1] - mean2[1] , mean1[2] - mean2[2]
+	
+		"""
+		
+	def get_min_max_loc(self):
+		img = cv2.cvtColor( self.maskedimg, cv.CV_RGB2GRAY ) #temprarily convert to bw
+		maximum, minimum, maxloc, minloc  = cv2.minMaxLoc(img , self.boxblank)
+		print maximum, minimum
+		show_img( self.boxblank )
+		return maximum, minimum, maxloc, minloc
+
+
 
 if __name__ == "__main__":
 	p = PhotoHack(sys.argv[1])
-	p.find_contours()
+	contours = p.find_contours()
+	#for i in range(0,10):
+		#print contours[-i]
+		#cv2.drawContours(p.img, [contours[-i]], -1, (0, 0, 255), 1 )
+	#show_img(p.img.copy()) 
 	p.find_squares()
 	large_square = p.find_largest_square()
 	
 	if large_square is not None:
-		#cv2.drawContours(p.img, [large_square], -1, (0, 255, 0), 3)
+		cv2.drawContours(p.img, [large_square], -1, (0, 255, 0), 3)
 		#show_img(p.img)
 		pass
 	else: 
 		print "No squares found :("
 
-	p.snip_square(large_square)
-
+	p.maskedimg, p.avg_inside = p.snip_square(large_square)
+	p.slope_inside = p.get_slope()
 
 
 	
-
+###So I have a method to maybe get the rectangle I want, the global max and global min of the internal area
+## and the locations in pixels of the max and min location.
+## From here I want to shift data around so that I can easily get a top to bottom measurement 
+## of the slope with respect to the brightness at each interval along the meter.
+## 

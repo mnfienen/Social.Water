@@ -190,7 +190,7 @@ class email_reader:
                 
             msg = email.message_from_string(data[0][1])  #TODO: check this array for misalignment of text from email vs sms
             print msg['Subject']
-            if 'sms from' in msg['Subject'].lower(): #same story here
+            if msg['Subject'] is not None and 'sms from' in msg['Subject'].lower(): #same story here
                 self.messages.append(email_message(msg['Date'],msg['Subject'],msg.get_payload()))  ##
         print '-'
         
@@ -301,8 +301,10 @@ class email_reader:
                 ##this message has no readable gauge, so we log it as a bad message.
                 ##print "Bad Message" + str(currmess.header)
                 tools.log_bad_contribution(currmess, self)
-                    
+                   
                 
+    def logout(self):
+        self.m.logout()
 
     # for the moment, just re-populate the entire data fields
     def update_data_fields(self,site_params):
@@ -324,8 +326,6 @@ class email_reader:
     def write_all_data_to_CSV(self):
     # loop through the stations
         for cg in self.stations:
-            ofp = open('../data/' + cg.upper() + '.csv','w')
-            ofp.write('Date and Time,Gage Height (ft),POSIX Stamp\n')
             datenum = self.data[cg].datenum # POSIX time stamp fmt for sorting
             dateval = self.data[cg].date
             gageheight = self.data[cg].height
@@ -335,7 +335,9 @@ class email_reader:
             if len(outdata) == 0:
                 print '%s has no measurements yet' %(cg)
             else:
-                unique_dates =np.unique(outdata[:,0])
+                ofp = open('../data/' + cg.upper() + '.csv','w')
+            	ofp.write('Date and Time,Gage Height (ft),POSIX Stamp\n')
+		unique_dates =np.unique(outdata[:,0])
                 indies = np.searchsorted(outdata[:,0],unique_dates)
                 final_outdata = outdata[indies,:]
                 for i in xrange(len(final_outdata)):
