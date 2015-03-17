@@ -188,12 +188,37 @@ class email_reader:
                 sys.stdout.flush()
             resp, data = self.m.fetch(cm, "(RFC822)")
                 
-            msg = email.message_from_string(data[0][1])  #TODO: check this array for misalignment of text from email vs sms
+            msg = email.message_from_string(data[0][1])
             print msg['Subject']
             if msg['Subject'] is not None and 'sms from' in msg['Subject'].lower(): #same story here
                 self.messages.append(email_message(msg['Date'],msg['Subject'],msg.get_payload()))  ##
         print '-'
         
+
+
+    def extract_gauge_info(self, currmess):
+        v = None
+        # rip the float out of the line
+        try:
+            v = tools.find_double(currmess.body)
+            # print "found val:" + str(v)
+        except tools.NoNumError:  # first fail, attempt another!
+            try:
+                v = tools.find_fraction(currmess.body)
+                #print "found frac val:" + str(v)
+                ## log the line that was bad.
+            except tools.NoNumError:
+                #print "Found bad line: " + currmess.station_line
+                ##Bad entry, log it.
+                self.totals = tools.log_bad_contribution(currmess, self)
+        if (v != None):
+            currmess.gageheight = v
+            userid = currmess.fromUUID
+            if userid in self.totals:
+                self.totals[userid] = ( self.totals[userid][0], self.totals[userid][1] + 1, self.totals[userid][2] )
+            else:
+                self.totals[userid] = ( currmess.date, 1, 0 )
+
     # now parse the actual messages -- date and body
     def parsemsgs(self,site_params):
         # parse through all the messages
@@ -273,29 +298,8 @@ class email_reader:
                                 maxrat_count = j
                 currmess.max_prox_ratio = maxratio    
                 currmess.closest_station_match = maxrat_count
-                
-                v= None
-                # rip the float out of the line
-                try:
-                    v = tools.find_double(currmess.station_line) 
-                    #print "found val:" + str(v)
-                except tools.NoNumError: #first fail, attempt another!
-                    try:
-                        v = tools.find_fraction( currmess.station_line ) 
-                        #print "found frac val:" + str(v)
-                        ## log the line that was bad.
-                    except tools.NoNumError:
-                        #print "Found bad line: " + currmess.station_line
-                        ##Bad entry, log it.
-                        tools.log_bad_contribution(currmess, self)
-			continue
-                if (v != None):
-                    currmess.gageheight =  v
-                    userid = currmess.fromUUID
-                    if userid in self.totals:
-                        self.totals[userid] = ( self.totals[userid][0], self.totals[userid][1]+1, self.totals[userid][2] )
-                    else:
-                        self.totals[userid] = ( currmess.date , 1 , 0 )
+
+                self.extract_gauge_info(currmess)
 
 
             else:
@@ -337,21 +341,25 @@ class email_reader:
                 print '%s has no measurements yet' %(cg)
             else:
                 ofp = open('../data/' + cg.upper() + '.csv','w')
-            	ofp.write('Date and Time,Gage Height (ft),POSIX Stamp\n')
-		unique_dates =np.unique(outdata[:,0])
+                ofp.write('Date and Time,Gage Height (ft),POSIX Stamp\n')
+                unique_dates =np.unique(outdata[:,0])
                 indies = np.searchsorted(outdata[:,0],unique_dates)
                 final_outdata = outdata[indies,:]
                 for i in xrange(len(final_outdata)):
                     
                     ofp.write(final_outdata[i,1] + ',' + str(final_outdata[i,2]) + ',' + str(final_outdata[i,0]) + '\n')
-            ofp.close()
+                ofp.close()
 
     def count_contributions(self):
         if os.path.exists("../data"):
                 ## read in last time's totals
+
+            if sys.argv[2] == "--SCOPE_ALL": ##hack this.
+                self.email_scope == "ALL"
+            """
             if not os.path.exists("../data/"+ self.stations[0][:2] +"1000.csv" ):
                 self.email_scope = "ALL" #if we don't have our data yet, we need to run all of the messages.
-
+            """
             if os.path.exists('../data/contributionTotals.csv'):
                 totalfile = open('../data/contributionTotals.csv','r')
                 totalreader = csv.reader( totalfile, delimiter=',' )
@@ -370,7 +378,7 @@ class email_reader:
             #print "writing to " + str( totalfile )
         totalfile.write('contributorID,firstContributionDate,totalContributions,badContibutions\n') 
         for key in self.totals:
-            print key
+            #print key
             if key != "NoPhoneNumberFound":
                 totalfile.write( str( key ) + ',' + str( self.totals[key][0] ) + ',' + str( self.totals[key][1] ) + ',' + str( self.totals[key][2] ) + '\n' ) 
         totalfile.close()
