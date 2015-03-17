@@ -288,6 +288,7 @@ class email_reader:
                         #print "Found bad line: " + currmess.station_line
                         ##Bad entry, log it.
                         tools.log_bad_contribution(currmess, self)
+			continue
                 if (v != None):
                     currmess.gageheight =  v
                     userid = currmess.fromUUID
