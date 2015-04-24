@@ -133,16 +133,6 @@ class email_reader:
         ## will contain a string user id # followed by a tuple of strings and ints.
         ##( date of first contribution, total contribution count, bad contributions)
 
-    def write_station_totals(self):
-        
-        for g in self.data:
-
-            result = self.data[g]
-            output = open( "../data/"+ str(result.gage) + "_StationTotals.csv", 'w' )
-            all_results = zip( result.users, result.date, result.height, [result.gage]*len(result.users) )
-            for item in all_results:
-                output.write(str(item[0]) + ','  + str(item[1]) + ',' + str(item[2]) + ',' + str(item[3]) + '\n')
-            output.close()
 
     # read the previous data from the CSV files
     def read_CSV_data(self):
@@ -334,10 +324,10 @@ class email_reader:
     def write_all_data_to_CSV(self):
     # loop through the stations
         for cg in self.stations:
-            datenum = self.data[cg].datenum # POSIX time stamp fmt for sorting
-            dateval = self.data[cg].date
-            gageheight = self.data[cg].height
-            userid = self.data[cg].users
+            datenum = self.data[cg].datenum # posix stamp
+            dateval = self.data[cg].date  #date of entry
+            gageheight = self.data[cg].height #heights of entries
+            userid = self.data[cg].users # list of users
             outdata = np.array(zip(datenum,dateval,gageheight,userid))
             ##print outdata
             if len(outdata) == 0:
@@ -354,15 +344,20 @@ class email_reader:
                 ofp.close()
 
     def count_contributions(self):
+        """Check if there is old user contribution data that needs to be tallied before
+           loading up the new data. If there isn't any, we need to rerun all of the messages.
+        """
         if os.path.exists("../data"):
                 ## read in last time's totals
-            if len(sys.argv) > 2 and sys.argv[2] == "-ALL":
+            if len(sys.argv) > 2 and sys.argv[2] == "-ALL": ##TODO: This might be better if it were moved elsewhere, maybe in the driver?
                 self.email_scope = "ALL"
 
-            """
-            if not os.path.exists("../data/"+ self.stations[0][:2] +"1000.csv" ):
-                self.email_scope = "ALL" #if we don't have our data yet, we need to run all of the messages.
-            """
+            #TODO: Add in a method for restricting the email search to one specific station?
+            # or even better would be a way to just arbitrarily flag settings so you can change
+            # whatever you want with the reader for a run, in case something goes wrong and
+            # you need to reprocess anything.
+
+          
             if os.path.exists('../data/contributionTotals.csv'):
                 totalfile = open('../data/contributionTotals.csv','r')
                 totalreader = csv.reader( totalfile, delimiter=',' )
@@ -374,17 +369,35 @@ class email_reader:
                     firstrow = False
                 totalfile.close()
             else:
-                self.email_scope = "ALL" # Also if this is the first run,
+                self.email_scope = "ALL" # Also if this is the first run, run everything.
                     
     def write_contributions(self):
+        """Write hashed user contribution info, useful for tracking total counts and whether there are any users
+        who are intentionally giving us bad data.
+        """
         totalfile = open('../data/contributionTotals.csv','w')
             #print "writing to " + str( totalfile )
         totalfile.write('contributorID,firstContributionDate,totalContributions,badContibutions\n') 
         for key in self.totals:
             #print key
-            if key != "NoPhoneNumberFound":
-                totalfile.write( str( key ) + ',' + str( self.totals[key][0] ) + ',' + str( self.totals[key][1] ) + ',' + str( self.totals[key][2] ) + '\n' ) 
+            totalfile.write( str( key ) + ',' + str( self.totals[key][0] ) + ',' + str( self.totals[key][1] ) + ',' + str( self.totals[key][2] ) + '\n' ) 
         totalfile.close()
+
+    def write_station_totals(self):
+        """ 
+        Write out station data that includes some user data, usefull for tracking 
+        general patterns of use among users. Do we have heavily localized use? Do we have 
+        people who use consistenly for long periods of time, or do people conribute sparsely?
+        Do power users burn out and get bored? These sorts of things.
+        """
+        for g in self.data:
+
+            result = self.data[g]
+            output = open( "../data/"+ str(result.gage) + "_StationTotals.csv", 'w' )
+            all_results = zip( result.users, result.date, result.height, [result.gage]*len(result.users) )
+            for item in all_results:
+                output.write(str(item[0]) + ','  + str(item[1]) + ',' + str(item[2]) + ',' + str(item[3]) + '\n')
+            output.close()
 
     # plot the results in a simple time series using Dygraphs javascript (no Flash ) option
     def plot_results_dygraphs(self):
