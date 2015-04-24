@@ -133,7 +133,16 @@ class email_reader:
         ## will contain a string user id # followed by a tuple of strings and ints.
         ##( date of first contribution, total contribution count, bad contributions)
 
+    def write_station_totals(self):
         
+        for g in self.data:
+
+            result = self.data[g]
+            output = open( "../data/"+ str(result.gage) + "_StationTotals.csv", 'w' )
+            all_results = zip( result.users, result.date, result.height, [result.gage]*len(result.users) )
+            for item in all_results:
+                output.write(str(item[0]) + ','  + str(item[1]) + ',' + str(item[2]) + ',' + str(item[3]) + '\n')
+            output.close()
 
     # read the previous data from the CSV files
     def read_CSV_data(self):
@@ -189,28 +198,22 @@ class email_reader:
             resp, data = self.m.fetch(cm, "(RFC822)")
                 
             msg = email.message_from_string(data[0][1])
-            print msg['Subject']
+
+            #print msg['Subject']
             if msg['Subject'] is not None and 'sms from' in msg['Subject'].lower(): #same story here
                 self.messages.append(email_message(msg['Date'],msg['Subject'],msg.get_payload()))  ##
-        print '-'
-        
+            print '-',
+        print ""
 
 
     def extract_gauge_info(self, currmess):
         v = None
         # rip the float out of the line
         try:
-            v = tools.find_double(currmess.body)
+            v = tools.find_double(str(currmess.body))
             # print "found val:" + str(v)
         except tools.NoNumError:  # first fail, attempt another!
-            try:
-                v = tools.find_fraction(currmess.body)
-                #print "found frac val:" + str(v)
-                ## log the line that was bad.
-            except tools.NoNumError:
-                #print "Found bad line: " + currmess.station_line
-                ##Bad entry, log it.
-                self.totals = tools.log_bad_contribution(currmess, self)
+            self.totals = tools.log_bad_contribution(currmess, self)
         if (v != None):
             currmess.gageheight = v
             userid = currmess.fromUUID
@@ -353,9 +356,9 @@ class email_reader:
     def count_contributions(self):
         if os.path.exists("../data"):
                 ## read in last time's totals
+            if len(sys.argv) > 2 and sys.argv[2] == "-ALL":
+                self.email_scope = "ALL"
 
-            if sys.argv[2] == "--SCOPE_ALL": ##hack this.
-                self.email_scope == "ALL"
             """
             if not os.path.exists("../data/"+ self.stations[0][:2] +"1000.csv" ):
                 self.email_scope = "ALL" #if we don't have our data yet, we need to run all of the messages.
@@ -504,6 +507,7 @@ class InvalidBounds(Exception):
         self.station = statID
     def __str__(self):
         return('\n\nStation "%s" not in the list of stations above.\nCheck for consistency.' %(self.station))
+
 
 
 

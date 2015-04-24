@@ -78,6 +78,9 @@ else:
    
     print 'write out new contributor data'
     allmsg.write_contributions()
+
+    print 'writing out station/user data to private'
+    allmsg.write_station_totals()
     
     print "logging out!"
     allmsg.logout()

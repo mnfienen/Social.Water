@@ -316,6 +316,11 @@ class TestTools(unittest.TestCase):
 
 
     def test_yank_or_log(self):
+        """
+        Set up an emailreeader with some dummy params and test the bad contribution logging on a dummy message.
+        TODO: this needs to be expanded and test a lot more conditions.
+        :return:
+        """
         dummyparams = dummyObj()
         msgstub = sw.email_reader(dummyparams)
 
@@ -330,7 +335,7 @@ class TestTools(unittest.TestCase):
         self.assert_( msgstub.totals["ea5c7fb3-e651-3257-9b9e-4e0dc5fd4d9a"] == ('2015', 1, 0) )
         msgstub.extract_gauge_info(msg)
         self.assert_( msgstub.totals["ea5c7fb3-e651-3257-9b9e-4e0dc5fd4d9a"] == ('2015', 2, 0) )
-        print msgstub.totals["ea5c7fb3-e651-3257-9b9e-4e0dc5fd4d9a"]
+        ##print msgstub.totals["ea5c7fb3-e651-3257-9b9e-4e0dc5fd4d9a"]
         msg.body = "NY1001    "
         msgstub.extract_gauge_info(msg)
         #print msgstub.totals["AABBCCDD"]

@@ -130,7 +130,7 @@ def log_bad_contribution(email_message, reader):
     hasher = uuid.uuid3( uuid.NAMESPACE_OID, number )
     userid = ( str(hasher) )
     #print "TO: " + str(hasher)
-    print userid
+    #print userid
     if userid in reader.totals:
         ##print "was in totals"
         reader.totals[userid] = ( reader.totals[userid][0], reader.totals[userid][1]+1, reader.totals[userid][2] + 1 )
