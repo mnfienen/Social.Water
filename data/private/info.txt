@@ -1,3 +1,3 @@
 NOTE:
-This directory holds some hashed user information, data kept here is not intended to be displayed or available on the web front end.
-
+This directory will hold some hashed user information, data kept here is not intended to be displayed or available on the web front end.
+Also, obviously don't push anything from this directory to whatever fork of this you're working on.
