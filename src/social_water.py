@@ -135,6 +135,7 @@ class email_reader:
 
 
     # read the previous data from the CSV files
+    ## This isn't actually called, but we might need it later.
     def read_CSV_data(self):
     # loop through the stations
         for cg in self.stations:
@@ -154,6 +155,8 @@ class email_reader:
                         self.data[cg].height.append(gageheight[0])
                         self.data[cg].datenum.append(datenum[0])
     
+
+
     # login in to the server
     def login(self):
         try:
@@ -332,16 +335,25 @@ class email_reader:
             ##print outdata
             if len(outdata) == 0:
                 print '%s has no measurements yet' %(cg)
-            else:
-                ofp = open('../data/' + cg.upper() + '.csv','w')
-                ofp.write('Date and Time,Gage Height (ft),POSIX Stamp\n')
-                unique_dates =np.unique(outdata[:,0])
+            elif os.path.exists('../data/' + cg.upper() + '.csv'): #If that station has old data, just append the new data.
+                ofp = open('../data/' + cg.upper() + '.csv','a')
+                unique_dates = np.unique(outdata[:,0])
                 indies = np.searchsorted(outdata[:,0],unique_dates)
                 final_outdata = outdata[indies,:]
                 for i in xrange(len(final_outdata)):
-                    
                     ofp.write(final_outdata[i,1] + ',' + str(final_outdata[i,2]) + ',' + str(final_outdata[i,0]) + '\n')
                 ofp.close()
+            else:
+                ofp = open('../data/' + cg.upper() + '.csv','w')  #otherwise write out a new file.
+                ofp.write('Date and Time,Gage Height (ft),POSIX Stamp\n')
+                unique_dates = np.unique(outdata[:,0])
+                indies = np.searchsorted(outdata[:,0],unique_dates)
+                final_outdata = outdata[indies,:]
+                for i in xrange(len(final_outdata)):
+                    ofp.write(final_outdata[i,1] + ',' + str(final_outdata[i,2]) + ',' + str(final_outdata[i,0]) + '\n')
+                ofp.close()
+
+
 
     def count_contributions(self):
         """Check if there is old user contribution data that needs to be tallied before
@@ -368,8 +380,7 @@ class email_reader:
                         self.totals[user[0]] = (user[1] , int( user[2] ) , int( user[3] ) )
                     firstrow = False
                 totalfile.close()
-            else:
-                self.email_scope = "ALL" # Also if this is the first run, run everything.
+           
                     
     def write_contributions(self):
         """Write hashed user contribution info, useful for tracking total counts and whether there are any users
@@ -393,7 +404,7 @@ class email_reader:
         for g in self.data:
 
             result = self.data[g]
-            output = open( "../data/"+ str(result.gage) + "_StationTotals.csv", 'w' )
+            output = open( "../data/" + str(result.gage) + "_StationTotals.csv", 'w' )
             all_results = zip( result.users, result.date, result.height, [result.gage]*len(result.users) )
             for item in all_results:
                 output.write(str(item[0]) + ','  + str(item[1]) + ',' + str(item[2]) + ',' + str(item[3]) + '\n')

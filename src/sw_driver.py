@@ -32,7 +32,9 @@ site_params.read_parfile()
 allmsg = email_reader(site_params)
 
 print 'Reading previous data from CSV files'
-allmsg.read_CSV_data()
+#allmsg.read_CSV_data() ## No longer needed, 
+# now we only read in contributor data
+# and keep it seperate from the readings.
 
 allmsg.count_contributions()
 
