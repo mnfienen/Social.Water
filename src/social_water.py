@@ -135,7 +135,6 @@ class email_reader:
 
 
     # read the previous data from the CSV files
-    ## This isn't actually called, but we might need it later.
     def read_CSV_data(self):
     # loop through the stations
         for cg in self.stations:
@@ -246,6 +245,10 @@ class email_reader:
                 if citem.lower() in line:
                     currmess.is_gage_msg = True 
                 
+            if currmess.robot_status:
+                self.process_a_robot_message(currmess)
+                continue ##if we have a robot message, we process it and skip the rest.
+                ## we don't want these contributions being logged in the same way.
 
             if currmess.is_gage_msg == True:
                 matched = False # set a flag to see if a match has been found
@@ -302,7 +305,31 @@ class email_reader:
                 ##this message has no readable gauge, so we log it as a bad message.
                 ##print "Bad Message" + str(currmess.header)
                 tools.log_bad_contribution(currmess, self)
-                   
+                
+    def process_a_robot_message(self, message):
+        split_message = str( message.body[0] ).split(",")
+        station_id = split_message[1]
+        water_height_measured_as = split_message[2]
+        temperature_measured_as = split_message[3]
+        self.append_robot_data(station_id, water_height_measured_as, temperature_measured_as, message)
+
+    def append_robot_data(self, station, height, temp, message):
+        datafile = None
+        if not os.path.exists('../data/robot_data/' + station + '.csv'):
+            datafile = open( '../data/robot_data/' + station + '.csv', 'w')
+            datafile.write("date,measured_water_level,measured_temperature,b64_encoded_original_message\n")
+        else:
+            datafile = open( '../data/robot_data/' + station + '.csv' , 'a')
+        assembled_output_string = ""
+        assembled_output_string += str( message.datestamp ) + ","
+
+        assembled_output_string += str( height ) + ","
+        assembled_output_string += str( temp ) + ","
+        assembled_output_string += str( base64.b64encode( str(message.body[0]) ) )
+        assembled_output_string += '\n'
+        print assembled_output_string
+        datafile.write(assembled_output_string)
+   
                 
     def logout(self):
         self.m.logout()
@@ -311,7 +338,7 @@ class email_reader:
     def update_data_fields(self,site_params):
         #mnfdebug ofpdebug = open('debug.dat','w')
         for cm in self.messages:
-            if cm.is_gage_msg and cm.closest_station_match != -99999:
+            if not cm.robot_status and cm.is_gage_msg and cm.closest_station_match != -99999:
                 lb = site_params.stations_and_bounds[self.stations[cm.closest_station_match]]['lbound']
                 ub = site_params.stations_and_bounds[self.stations[cm.closest_station_match]]['ubound']
                 if ((cm.gageheight > lb) and  (cm.gageheight < ub)):
@@ -335,16 +362,17 @@ class email_reader:
             ##print outdata
             if len(outdata) == 0:
                 print '%s has no measurements yet' %(cg)
-            elif os.path.exists('../data/' + cg.upper() + '.csv'): #If that station has old data, just append the new data.
+            elif os.path.exists('../data/' + cg.upper() + '.csv'): #If that station has data, just append the new data.
                 ofp = open('../data/' + cg.upper() + '.csv','a')
                 unique_dates = np.unique(outdata[:,0])
                 indies = np.searchsorted(outdata[:,0],unique_dates)
                 final_outdata = outdata[indies,:]
                 for i in xrange(len(final_outdata)):
+                    
                     ofp.write(final_outdata[i,1] + ',' + str(final_outdata[i,2]) + ',' + str(final_outdata[i,0]) + '\n')
                 ofp.close()
             else:
-                ofp = open('../data/' + cg.upper() + '.csv','w')  #otherwise write out a new file.
+                ofp = open('../data/' + cg.upper() + '.csv','w') 
                 ofp.write('Date and Time,Gage Height (ft),POSIX Stamp\n')
                 unique_dates = np.unique(outdata[:,0])
                 indies = np.searchsorted(outdata[:,0],unique_dates)
@@ -404,7 +432,7 @@ class email_reader:
         for g in self.data:
 
             result = self.data[g]
-            output = open( "../data/" + str(result.gage) + "_StationTotals.csv", 'w' )
+            output = open( "../data/"+ str(result.gage) + "_StationTotals.csv", 'w' )
             all_results = zip( result.users, result.date, result.height, [result.gage]*len(result.users) )
             for item in all_results:
                 output.write(str(item[0]) + ','  + str(item[1]) + ',' + str(item[2]) + ',' + str(item[3]) + '\n')
@@ -493,7 +521,13 @@ class email_message:
         ##print "HASHING1: " + number,
         hasher = uuid.uuid3( uuid.NAMESPACE_OID, number ) 
         self.fromUUID=  ( str(hasher) )
-        ##print "TO: " + str(hasher) 
+        self.robot_status = self.check_self_for_robot_status()
+
+    def check_self_for_robot_status(self):
+        ROBOT_STATUS = "IMAROBOT"
+        #checks for the "IMAROBOT" magic number and returns the status
+
+        return self.body is not None and ROBOT_STATUS in str( self.body[0] )
 
 
 
@@ -531,6 +565,7 @@ class InvalidBounds(Exception):
         self.station = statID
     def __str__(self):
         return('\n\nStation "%s" not in the list of stations above.\nCheck for consistency.' %(self.station))
+
 
 
 

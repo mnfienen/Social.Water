@@ -37,37 +37,22 @@ class TestTools(unittest.TestCase):
         self.assertEquals(tools.find_decimal(str(self.double2)), self.double2)
 
     def test_find_decimal3(self):
-        thistest = "-9000.0000"
+        thedouble = "-9000.0000"
         try:
-            thedouble = tools.find_decimal(thistest)
-            self.fail("No error was thrown while parsing an invalic double")
+            thedouble = tools.find_decimal(thedouble)
+            self.fail("No error was thrown while parsing an invalid double" + thedouble)
         except NoNumError as error:
-            # print "We didn't parse the double" ##Good, this worked!
-            pass
-            ''' LOGIC NOTE: This should happen, so unless we hit the
-             else,it should just do nothing and this
-             will count as a win.'''
-
-            # If we get here, an exception was not raised!
-            ## Fail! fail like a sophomore!
-        self.fail("The following value should not have parsed as a double: " + thedouble)
+            return
 
 
     def test_find_decimal4(self):
-        thistest = "2040"
+        thedouble = "2040"
         try:
-            thedouble = tools.find_decimal(thistest)
-            self.fail("No error was thrown while parsing an invalic number " + thistest)
+            thedouble = tools.find_decimal(thedouble)
+            self.fail("No error was thrown while parsing an invalid number " + thedouble)
         except NoNumError as error:
-            # print "We didn't parse the double" ##Good, this worked!
-            pass
-            ''' LOGICNOTE: This should happen, so unless we hit the
-             else,it should just do nothing and this
-             will count as a win.'''
+            return
 
-            # If we get here, an exception was not raised!
-            ## Fail! fail like a sophomore!
-        self.fail("The following value should not have parsed as a double: " + thedouble)
 
     def test_find_decimal_in_text(self):
         self.assertEquals(tools.find_decimal(self.line), self.double1)
@@ -129,13 +114,6 @@ class TestTools(unittest.TestCase):
         line = "Some phone number: (504) 908-0034 "
         self.assertEquals(tools.find_phone_number(line), "(504) 908-0034")
 
-    def test_find_phone_with_country_code(self):
-        line = "Some phone number: 1-504-908-0034 "
-        self.assertEquals(tools.find_phone_number(line), "1 (504) 908-0034")
-
-    def test_find_phone_with_country_code2(self):
-        line = "Some phone number: 321-504-908-0034 "
-        self.assertEquals(tools.find_phone_number(line), "321 (504) 908-0034")
 
     def test_find_phone_with_country_code3(self):
         """
@@ -148,10 +126,6 @@ class TestTools(unittest.TestCase):
         except NoNumError as error:
 
             pass
-        """LOGICNOTE: Similar logic to some of the tests above,
-         if this parses that number as a phone number, it has done
-         something wrong. We'll run a few tests like this to make sure it's not picking  up anything we don't want.
-         """
 
     def test_find_phone_with_dash(self):
         line = "Some phone number: -(504) 908-0034 "
@@ -340,6 +314,14 @@ class TestTools(unittest.TestCase):
         msgstub.extract_gauge_info(msg)
         #print msgstub.totals["AABBCCDD"]
         self.assert_( msgstub.totals["ea5c7fb3-e651-3257-9b9e-4e0dc5fd4d9a"] == ('2015', 3, 1) )
+
+
+
+    def test_robot_email_creation(self):
+        test_email = sw.email_message("09211908","sms_from 1 555-908-0812","IMAROBOT,NY20002,123,54.09")
+        self.assertTrue(test_email.robot_status )
+
+
 
 if __name__ == '__main__':
     print "\033[34mSocial.Water Test Suite\033[39m"
