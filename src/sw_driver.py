@@ -1,3 +1,5 @@
+#!/util/python-2.7.3/bin/python
+
 from social_water import *
 import os
 import base64
@@ -30,9 +32,11 @@ site_params.read_parfile()
 allmsg = email_reader(site_params)
 
 print 'Reading previous data from CSV files'
-allmsg.read_CSV_data()
+#allmsg.read_CSV_data() ## No longer needed, 
+# now we only read in contributor data
+# and keep it seperate from the readings.
 
-
+allmsg.count_contributions()
 
 print 'Attempting to log on to gmail account:\n\t%s' %(site_params.usr)
 # login to the account
@@ -49,7 +53,10 @@ allmsg.checkmail()
 # rewriting the charts and CSV files
 if len(allmsg.msgids[0].split()) == 0:
     print 'No new messages: quitting now'
+    allmsg.logout()
 else:
+    
+    ##load up our old contributor data
     
     print 'parsing messages'
     # parse the messages
@@ -70,6 +77,15 @@ else:
     print 'plot the results using dygraphs'
     allmsg.plot_results_dygraphs()
     
+   
+    print 'write out new contributor data'
+    allmsg.write_contributions()
+
+    print 'writing out station/user data to private'
+    allmsg.write_station_totals()
     
+    print "logging out!"
+    allmsg.logout()
+
     
 print '\nAll done for now!'
