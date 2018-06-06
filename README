@@ -2,6 +2,7 @@ Social.Water -- a python software package to acquire measurements sent
 by citizen-scientists via text messages.
 Version 1.1 --- March 13, 2013
 
+This is the deprecated Python 2.7 branch called `python27`. See `master` branch for Python 3.6 version.
 Documentation:
 Fienen, M.N., and Lowry, C.S., 2012, Social.Water-A crowdsourcing tool for environmental data acquisition. Computers & Geosciences 49, 164-169, doi:10.1016/j.cageo.2012.06.015.
 Lowry, C. S. and Fienen, M. N., 2013,  CrowdHydrology: Crowdsourcing Hydrologic Data and Engaging Citizen Scientists. Ground Water 51, 151-156, doi:10.1111/j.1745-6584.2012.00956.x.
