@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy as np
 import email, imaplib
 from datetime import datetime, timedelta
@@ -28,7 +29,7 @@ class inpardata:
         try:
             inpardat = ET.parse(self.parfilename)
         except:
-            raise(FileOpenFail(self.parfilename))  
+            raise FileOpenFail  
         inpars = inpardat.getroot()
         # obtain EMAIL ACCOUNT INFORMATION
         self.usr = inpars.findall('.//main_account/usr')[0].text
@@ -117,13 +118,13 @@ class email_reader:
     def __init__ (self,site_params):
         self.name = 'crowdhydrology'
         self.user = site_params.usr
-        self.pwd = base64.b64decode(site_params.pwd_encoded)
+        self.pwd = (base64.b64decode(site_params.pwd_encoded)).decode()
         self.email_scope = site_params.email_scope
         self.data = dict()
         self.dfmt = '%a, %d %b %Y %H:%M:%S '
         self.outfmt = '%m/%d/%Y %H:%M:%S'
         # make a list of valid station IDs
-        self.stations = site_params.stations_and_bounds.keys()
+        self.stations = list(site_params.stations_and_bounds.keys())
         for i in self.stations:
             self.data[i] = gage_results(i)
         self.tzdata = timezone_conversion_data(site_params)
@@ -145,7 +146,7 @@ class email_reader:
                 datenum = np.atleast_1d(indat['POSIX_Stamp'])
                 try:
                     len_indat = len(indat)
-                    for i in xrange(len_indat):
+                    for i in range(len_indat):
                         self.data[cg].date.append(dates[i])
                         self.data[cg].height.append(gageheight[i])
                         self.data[cg].datenum.append(datenum[i])
@@ -161,9 +162,9 @@ class email_reader:
         try:
             self.m = imaplib.IMAP4_SSL("imap.gmail.com")
             self.m.login(self.user,self.pwd)
-            self.m.select("[Gmail]/All Mail")
+            self.m.select('"[Gmail]/All Mail"')
         except:
-            raise(LogonFail(self.user))
+            raise LogonFail
         
     # check for new messages
     def checkmail(self):
@@ -174,6 +175,7 @@ class email_reader:
 
     # parse the new messages into new message objects
     def parsemail(self):
+
         tot_msgs = len(self.msgids[0].split())
         kmess = 0
         self.messages = list()
@@ -185,18 +187,28 @@ class email_reader:
             else:
                 rems = np.remainder(100,kmess)
             if rems == 0:
-                print '-',
+                print('-', end=' ')
                 sys.stdout.flush()
             resp, data = self.m.fetch(cm, "(RFC822)")
-                
-            msg = email.message_from_string(data[0][1])
 
-            #print msg['Subject']
-            if msg['Subject'] is not None and 'sms from' in msg['Subject'].lower(): #same story here
-                self.messages.append(email_message(msg['Date'],msg['Subject'],msg.get_payload()))  ##
-            print '-',
-        print ""
+            msg = email.message_from_string((data[0][1]).decode())
 
+            # print msg['Subject']
+            if msg['Subject'] is not None and ('sms from' in msg['Subject'].lower() or 'new text message from' in msg[
+                'Subject'].lower()):  # same story here
+                # See if the message contains an attachment:
+                if msg.get_content_maintype() == 'multipart':
+                    # print "Debug: Multipart message found: " + msg['Subject']
+                    for part in msg.walk():
+                        if part.get_content_type() == "text/plain":
+                            # This should be the message body, not an attachment
+                            self.messages.append(
+                                email_message(msg['Date'], msg['Subject'], part.get_payload(decode=True)))  ##
+                            break
+                else:
+                    self.messages.append(email_message(msg['Date'], msg['Subject'], msg.get_payload()))  ##
+            print('-', end=' ')
+        print ("")
 
     def extract_gauge_info(self, currmess):
         v = None
@@ -216,35 +228,43 @@ class email_reader:
 
     # now parse the actual messages -- date and body
     def parsemsgs(self,site_params):
+        #print("Num of messages: ",len(self.messages))
         # parse through all the messages
         for currmess in self.messages:
             # first the dates
-            tmpdate = currmess.rawdate[:-5]
+            #print "Debug: currmess.rawdate = " + currmess.rawdate
+            tmpdate = re.sub(' \(...\)', '', currmess.rawdate)
+            tmpdate = tmpdate[:-5]
+            #print "Debug: tmpdate = " + tmpdate
             currmess.date = datetime.strptime(tmpdate,self.dfmt)
             currmess.date = tz_adjust_STD_DST(currmess.date,self.tzdata)
             currmess.dateout = datetime.strftime(currmess.date,self.outfmt)
-            currmess.datestamp = time.mktime(datetime.timetuple(currmess.date)) 
-            
-            
+            currmess.datestamp = time.mktime(datetime.timetuple(currmess.date))
+
             # now the message bodies
-            cm = currmess.body 
+            cm = currmess.body
+
+            if not isinstance(cm,str):
+                cm = currmess.body.decode()
+
             # do a quick check that the message body is only a string - not a list
             # a list happens if there is a forwarded message
-            if not isinstance(cm,str):   
+            if not isinstance(cm,str):
                 cm = cm[0].get_payload()
             maxratio = 0
             maxrat_count = -99999
            # maxrat_line = -99999
+            #print '\n\n\nDebug: Original message :' + cm + ':'
             line = cm.lower()
-            line = string.rstrip(line,line[string.rfind(line,'sent using sms-to-email'):])
+            line = str.rstrip(line,line[str.rfind(line,'sent using sms-to-email'):])
             line = re.sub('(\r)',' ',line)
             line = re.sub('(\n)',' ',line)
             line = re.sub('(--)',' ',line)
-            
+
             for citem in site_params.msg_ids:
                 if citem.lower() in line:
                     currmess.is_gage_msg = True 
-                
+
             if currmess.robot_status:
                 self.process_a_robot_message(currmess)
                 continue ##if we have a robot message, we process it and skip the rest.
@@ -327,7 +347,8 @@ class email_reader:
         assembled_output_string += str( temp ) + ","
         assembled_output_string += str( base64.b64encode( str(message.body[0]) ) )
         assembled_output_string += '\n'
-        print assembled_output_string
+        print("assembled_output_string")
+        print(assembled_output_string)
         datafile.write(assembled_output_string)
    
                 
@@ -346,28 +367,28 @@ class email_reader:
                     self.data[self.stations[cm.closest_station_match]].datenum.append(cm.datestamp)
                     self.data[self.stations[cm.closest_station_match]].height.append(cm.gageheight)
                     self.data[self.stations[cm.closest_station_match]].users.append(cm.fromUUID)
-                    #print cm.fromUUID
+                    #print(cm.fromUUID)
 
                    #mnfdebug ofpdebug.write('%25s%20f%12f%12s\n' %(cm.date.strftime(self.outfmt),cm.datestamp,cm.gageheight,self.stations[cm.closest_station_match]))
         #mnfdebug ofpdebug.close()
     # write all data to CSV files                       
     def write_all_data_to_CSV(self):
-    # loop through the stations
+        # loop through the stations
         for cg in self.stations:
             datenum = self.data[cg].datenum # posix stamp
             dateval = self.data[cg].date  #date of entry
             gageheight = self.data[cg].height #heights of entries
             userid = self.data[cg].users # list of users
-            outdata = np.array(zip(datenum,dateval,gageheight,userid))
+            outdata = np.array(list(zip(datenum,dateval,gageheight,userid)))
             ##print outdata
             if len(outdata) == 0:
-                print '%s has no measurements yet' %(cg)
+                print('%s has no measurements yet' %(cg))
             elif os.path.exists('../data/' + cg.upper() + '.csv'): #If that station has data, just append the new data.
                 ofp = open('../data/' + cg.upper() + '.csv','a')
                 unique_dates = np.unique(outdata[:,0])
                 indies = np.searchsorted(outdata[:,0],unique_dates)
                 final_outdata = outdata[indies,:]
-                for i in xrange(len(final_outdata)):
+                for i in range(len(final_outdata)):
                     
                     ofp.write(final_outdata[i,1] + ',' + str(final_outdata[i,2]) + ',' + str(final_outdata[i,0]) + '\n')
                 ofp.close()
@@ -377,7 +398,7 @@ class email_reader:
                 unique_dates = np.unique(outdata[:,0])
                 indies = np.searchsorted(outdata[:,0],unique_dates)
                 final_outdata = outdata[indies,:]
-                for i in xrange(len(final_outdata)):
+                for i in range(len(final_outdata)):
                     ofp.write(final_outdata[i,1] + ',' + str(final_outdata[i,2]) + ',' + str(final_outdata[i,0]) + '\n')
                 ofp.close()
 
@@ -433,7 +454,7 @@ class email_reader:
 
             result = self.data[g]
             output = open( "../data/"+ str(result.gage) + "_StationTotals.csv", 'w' )
-            all_results = zip( result.users, result.date, result.height, [result.gage]*len(result.users) )
+            all_results = list(zip( result.users, result.date, result.height, [result.gage]*len(result.users) ))
             for item in all_results:
                 output.write(str(item[0]) + ','  + str(item[1]) + ',' + str(item[2]) + ',' + str(item[3]) + '\n')
             output.close()
@@ -526,8 +547,10 @@ class email_message:
     def check_self_for_robot_status(self):
         ROBOT_STATUS = "IMAROBOT"
         #checks for the "IMAROBOT" magic number and returns the status
+        #print(self.body)
 
-        return self.body is not None and ROBOT_STATUS in str( self.body[0] )
+
+        return self.body is not None and ROBOT_STATUS in str( self.body )
 
 
 
