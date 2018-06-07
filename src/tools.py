@@ -131,10 +131,11 @@ def log_bad_contribution(email_message, reader):
     userid = ( str(hasher) )
     #print "TO: " + str(hasher)
     #print userid
+
     if userid in reader.totals:
         ##print "was in totals"
-        reader.totals[userid] = ( reader.totals[userid][0], reader.totals[userid][1]+1, reader.totals[userid][2] + 1 )
+        reader.totals[userid] = ( reader.totals[userid][0], reader.totals[userid][1]+1, reader.totals[userid][2] + 1, reader.totals[userid][3] )
     else:
         ##print "wasn't in totals"
-        reader.totals[userid] = ( email_message.date , 1, 1 )
+        reader.totals[userid] = ( email_message.date , 1, 1, dict())
     return reader.totals

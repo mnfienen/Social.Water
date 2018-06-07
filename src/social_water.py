@@ -17,6 +17,7 @@ import uuid
 import fuzz
 import process
 import tools
+import json
 
 
 
@@ -221,10 +222,19 @@ class email_reader:
         if (v != None):
             currmess.gageheight = v
             userid = currmess.fromUUID
+            station = self.stations[currmess.closest_station_match]
+
+
             if userid in self.totals:
-                self.totals[userid] = ( self.totals[userid][0], self.totals[userid][1] + 1, self.totals[userid][2] )
+                contributionList = self.totals[userid][3]
+                if station in self.totals[userid][3]:
+                    self.totals[userid][3][station] += 1
+                else:
+                    self.totals[userid][3][station] = 1
+
+                self.totals[userid] = ( self.totals[userid][0], self.totals[userid][1] + 1, self.totals[userid][2], contributionList)
             else:
-                self.totals[userid] = ( currmess.date, 1, 0 )
+                self.totals[userid] = ( currmess.date, 1, 0, {station: 1})
 
     # now parse the actual messages -- date and body
     def parsemsgs(self,site_params):
@@ -441,8 +451,9 @@ class email_reader:
                 firstrow = True
                 for user in totalreader:
                     if not firstrow:
-                        #print user
-                        self.totals[user[0]] = (user[1] , int( user[2] ) , int( user[3] ) )
+                        #print(user[4])f
+                        contribution_dict_str = user[4].replace("-", ",").replace("\'", "\"")
+                        self.totals[user[0]] = (user[1] , int( user[2] ) , int( user[3] ), json.loads(contribution_dict_str))
                     firstrow = False
                 totalfile.close()
            
@@ -453,10 +464,11 @@ class email_reader:
         """
         totalfile = open('../data/contributionTotals.csv','w')
             #print "writing to " + str( totalfile )
-        totalfile.write('contributorID,firstContributionDate,totalContributions,badContibutions\n') 
+        totalfile.write('contributorID,firstContributionDate,totalContributions,badContributions,validContributionsDict\n')
         for key in self.totals:
             #print key
-            totalfile.write( str( key ) + ',' + str( self.totals[key][0] ) + ',' + str( self.totals[key][1] ) + ',' + str( self.totals[key][2] ) + '\n' ) 
+            #print(self.totals[key][3])
+            totalfile.write( str( key ) + ',' + str( self.totals[key][0] ) + ',' + str( self.totals[key][1] ) + ',' + str( self.totals[key][2] )+ ',' + str( self.totals[key][3] ).replace(",", "-") + '\n' )
         totalfile.close()
 
     def write_station_totals(self):
