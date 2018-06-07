@@ -355,6 +355,21 @@ class email_reader:
     def logout(self):
         self.m.logout()
 
+    def is_duplicate_entry(self, message):
+        msg_station = self.stations[message.closest_station_match]
+
+        # Get the data from that message's station (copied over from
+        if os.path.exists('../data/' + msg_station.upper() + '.csv'):
+            indat = np.genfromtxt('../data/' + msg_station.upper() + '.csv',dtype=None,delimiter=',',names=True, encoding=None)
+            datenum = np.atleast_1d(indat['POSIX_Stamp'])
+            len_indat = len(indat)
+            # Loop through every entry
+            for i in range(len_indat):
+                if datenum[i] == message.datestamp:
+                    print("Found a duplicate entry!")
+                    return True
+        return False
+
     # for the moment, just re-populate the entire data fields
     def update_data_fields(self,site_params):
         #mnfdebug ofpdebug = open('debug.dat','w')
@@ -362,7 +377,7 @@ class email_reader:
             if not cm.robot_status and cm.is_gage_msg and cm.closest_station_match != -99999:
                 lb = site_params.stations_and_bounds[self.stations[cm.closest_station_match]]['lbound']
                 ub = site_params.stations_and_bounds[self.stations[cm.closest_station_match]]['ubound']
-                if ((cm.gageheight > lb) and  (cm.gageheight < ub)):
+                if ((cm.gageheight > lb) and  (cm.gageheight < ub)) and not self.is_duplicate_entry(cm):
                     self.data[self.stations[cm.closest_station_match]].date.append(cm.date.strftime(self.outfmt))
                     self.data[self.stations[cm.closest_station_match]].datenum.append(cm.datestamp)
                     self.data[self.stations[cm.closest_station_match]].height.append(cm.gageheight)
@@ -371,6 +386,7 @@ class email_reader:
 
                    #mnfdebug ofpdebug.write('%25s%20f%12f%12s\n' %(cm.date.strftime(self.outfmt),cm.datestamp,cm.gageheight,self.stations[cm.closest_station_match]))
         #mnfdebug ofpdebug.close()
+
     # write all data to CSV files                       
     def write_all_data_to_CSV(self):
         # loop through the stations
