@@ -126,7 +126,7 @@ def hash_number(header):
 def log_bad_contribution(email_message, reader):
     number = str( email_message.header ).lower()
     number = remove_chars(number, "()- smsfrom")
-    print number
+    print(number)
     hasher = uuid.uuid3( uuid.NAMESPACE_OID, number )
     userid = ( str(hasher) )
     #print "TO: " + str(hasher)

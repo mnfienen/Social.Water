@@ -5,7 +5,7 @@ def asciidammit(x):
             return x.decode('ascii')
         except:
             return x.decode('ascii', 'ignore')
-    elif type(x) is unicode:
+    elif type(x) is str:
         try:
             s = x.encode('ascii')
             return s.decode('ascii')
@@ -13,7 +13,7 @@ def asciidammit(x):
             s = x.encode('ascii', 'ignore')
             return s.decode('ascii')
     else:
-        x = unicode(x)
+        x = str(x)
         return asciidammit(x)
 
 def remove_punctuation(s):

@@ -31,10 +31,10 @@ class TestTools(unittest.TestCase):
         test = sw.inpardata("testfile.xml")
 
     def test_find_decimal1(self):
-        self.assertEquals(tools.find_decimal(str(self.double1)), self.double1)
+        self.assertEqual(tools.find_decimal(str(self.double1)), self.double1)
 
     def test_find_decimal2(self):
-        self.assertEquals(tools.find_decimal(str(self.double2)), self.double2)
+        self.assertEqual(tools.find_decimal(str(self.double2)), self.double2)
 
     def test_find_decimal3(self):
         thedouble = "-9000.0000"
@@ -55,12 +55,12 @@ class TestTools(unittest.TestCase):
 
 
     def test_find_decimal_in_text(self):
-        self.assertEquals(tools.find_decimal(self.line), self.double1)
+        self.assertEqual(tools.find_decimal(self.line), self.double1)
 
     def test_asciidammit(self):
         tester = "Here's a string to test! Wooooooop\r\n\t"
         tester = utils.asciidammit(tester)
-        self.assertEquals(tester, unicode(tester))
+        self.assertEqual(tester, str(tester))
 
         # #this does baiscally nothing now, obviously...
 
@@ -74,7 +74,7 @@ class TestTools(unittest.TestCase):
     def test_remove_cr(self):
         tester = "Here's some text that looks like it's windows formatted \n\r"
         tester = utils.remove_cr(tester)
-        self.assertEquals(tester, "Here's some text that looks like it's windows formatted \n ")
+        self.assertEqual(tester, "Here's some text that looks like it's windows formatted \n ")
 
     def test_validate_strings(self):
         tester = None
@@ -83,7 +83,7 @@ class TestTools(unittest.TestCase):
         self.assertTrue(not utils.validate_string(tester))
         tester = 0.00123
         self.assertTrue(not utils.validate_string(tester))
-        tester = 999999999999999999999999999999999L
+        tester = 999999999999999999999999999999999
         self.assertTrue(not utils.validate_string(tester))
         tester = 'a'
         self.assertTrue(utils.validate_string(tester))
@@ -95,10 +95,10 @@ class TestTools(unittest.TestCase):
     def test_correct_subject(self):
 
         tester = "sms from 120341"
-        self.assertEquals(utils.correct_subject(tester), True)
+        self.assertEqual(utils.correct_subject(tester), True)
 
         tester = "SMS FROM 120341"
-        self.assertEquals(utils.correct_subject(tester), True)
+        self.assertEqual(utils.correct_subject(tester), True)
 
         tester = "S M S F R O M 123-8121-0412"
         self.assertTrue(not utils.correct_subject(tester), "Spaces in line, shouldn't have parsed as true")
@@ -112,7 +112,7 @@ class TestTools(unittest.TestCase):
 
     def test_find_phone_no_country_code(self):
         line = "Some phone number: (504) 908-0034 "
-        self.assertEquals(tools.find_phone_number(line), "(504) 908-0034")
+        self.assertEqual(tools.find_phone_number(line), "(504) 908-0034")
 
 
     def test_find_phone_with_country_code3(self):
@@ -183,7 +183,7 @@ class TestTools(unittest.TestCase):
     def test_remove_chars(self):
         string = "Here's a string and we will remove () some ';. chars"
         string = remove_chars(string, "'()';.")
-        self.assertEquals(string, "Heres a string and we will remove  some  chars")
+        self.assertEqual(string, "Heres a string and we will remove  some  chars")
         string = "      woo        "
         string = remove_chars(string, "o ")
         self.assertEqual(string, "w")
@@ -191,7 +191,7 @@ class TestTools(unittest.TestCase):
     def test_hash_phone_number(self):
         testmsg = email_stub()
         testhash = hash_phone_number(testmsg)
-        self.assertEquals(str(testhash), "9d6feecd-8c04-3264-926e-3da1476e4125")
+        self.assertEqual(str(testhash), "9d6feecd-8c04-3264-926e-3da1476e4125")
 
     def test_find_double(self):
         testmsg1 = "Some nonsense and then 2344.234e12 let's hope that works."
@@ -199,10 +199,10 @@ class TestTools(unittest.TestCase):
         try:
             testmsg2 = find_double(testmsg1)
         except NoNumError:
-            print testmsg2
+            print(testmsg2)
             self.fail("No float value was found in the line: " + testmsg1)
         else:
-            self.assertEquals(testmsg2, float("2344234000000000.0"))
+            self.assertEqual(testmsg2, float("2344234000000000.0"))
         #huzzah!
 
     def test_find_double2(self):
@@ -211,10 +211,10 @@ class TestTools(unittest.TestCase):
         try:
             testmsg2 = find_double(testmsg1)
         except NoNumError:
-            print testmsg2
+            print(testmsg2)
             self.fail("No float value was found in the line: " + testmsg1)
         else:
-            self.assertEquals(testmsg2, float("2344.234234"))
+            self.assertEqual(testmsg2, float("2344.234234"))
         #huzzah!
 
     def test_find_double3(self):
@@ -223,10 +223,10 @@ class TestTools(unittest.TestCase):
         try:
             testmsg2 = find_double(testmsg1)
         except NoNumError:
-            print testmsg2
+            print(testmsg2)
             self.fail("No float value was found in the line: " + testmsg1)
         else:
-            self.assertEquals(testmsg2, float("1200"))
+            self.assertEqual(testmsg2, float("1200"))
         #huzzah!
 
     def test_find_double4(self):
@@ -237,7 +237,7 @@ class TestTools(unittest.TestCase):
         except NoNumError:
             pass
         else:
-            self.assertEquals(testmsg2, float("1200"))
+            self.assertEqual(testmsg2, float("1200"))
         #huzzah!
 
     def test_find_double5(self):
@@ -246,10 +246,10 @@ class TestTools(unittest.TestCase):
         try:
             testmsg2 = find_double(testmsg1)
         except NoNumError:
-            print testmsg2
+            print(testmsg2)
             self.fail("No float value was found in the line: " + testmsg1)
         else:
-            self.assertEquals(testmsg2, .5)
+            self.assertEqual(testmsg2, .5)
         #huzzah!
 
     def test_find_fraction(self):
@@ -259,7 +259,7 @@ class TestTools(unittest.TestCase):
         except NoNumError:
             self.fail("No Fraction Found in " + msg)
         else:
-            self.assertEquals(parsed, 3.75)
+            self.assertEqual(parsed, 3.75)
 
     def test_find_fraction2(self):
         msg = "The water level is 12 2/3 inches"
@@ -268,7 +268,7 @@ class TestTools(unittest.TestCase):
         except NoNumError:
             self.fail("No Fraction Found in " + msg)
         else:
-            self.assertEquals(parsed, 12.0 + (2 / 3.0))
+            self.assertEqual(parsed, 12.0 + (2 / 3.0))
 
     def test_find_fraction3(self):
         msg = "The water level is 1/2 inch"
@@ -277,7 +277,7 @@ class TestTools(unittest.TestCase):
         except NoNumError:
             self.fail("No Fraction Found in " + msg)
         else:
-            self.assertEquals(parsed, .5)
+            self.assertEqual(parsed, .5)
 
     def test_find_fraction6(self):
         msg = "The water level is 1/2 inch"
@@ -286,7 +286,7 @@ class TestTools(unittest.TestCase):
         except NoNumError:
             self.fail("No Fraction Found in " + msg)
         else:
-            self.assertEquals(parsed, .5)
+            self.assertEqual(parsed, .5)
 
 
     def test_yank_or_log(self):
@@ -306,14 +306,14 @@ class TestTools(unittest.TestCase):
         msg.date = "2015"
         msgstub.extract_gauge_info(msg)
         #print msgstub.totals["AABBCCDD"]
-        self.assert_( msgstub.totals["ea5c7fb3-e651-3257-9b9e-4e0dc5fd4d9a"] == ('2015', 1, 0) )
+        self.assertTrue( msgstub.totals["ea5c7fb3-e651-3257-9b9e-4e0dc5fd4d9a"] == ('2015', 1, 0) )
         msgstub.extract_gauge_info(msg)
-        self.assert_( msgstub.totals["ea5c7fb3-e651-3257-9b9e-4e0dc5fd4d9a"] == ('2015', 2, 0) )
+        self.assertTrue( msgstub.totals["ea5c7fb3-e651-3257-9b9e-4e0dc5fd4d9a"] == ('2015', 2, 0) )
         ##print msgstub.totals["ea5c7fb3-e651-3257-9b9e-4e0dc5fd4d9a"]
         msg.body = "NY1001    "
         msgstub.extract_gauge_info(msg)
         #print msgstub.totals["AABBCCDD"]
-        self.assert_( msgstub.totals["ea5c7fb3-e651-3257-9b9e-4e0dc5fd4d9a"] == ('2015', 3, 1) )
+        self.assertTrue( msgstub.totals["ea5c7fb3-e651-3257-9b9e-4e0dc5fd4d9a"] == ('2015', 3, 1) )
 
 
 
@@ -324,6 +324,6 @@ class TestTools(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    print "\033[34mSocial.Water Test Suite\033[39m"
-    print "\033[32mRunning tests now...\033[39m"
+    print("\033[34mSocial.Water Test Suite\033[39m")
+    print("\033[32mRunning tests now...\033[39m")
     unittest.main()
