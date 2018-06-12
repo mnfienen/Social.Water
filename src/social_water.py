@@ -20,7 +20,6 @@ import tools
 import json
 
 
-
 class inpardata:
     def __init__(self,parfilename):
         self.parfilename = parfilename
@@ -226,15 +225,21 @@ class email_reader:
 
 
             if userid in self.totals:
-                contributionList = self.totals[userid][3]
-                if station in self.totals[userid][3]:
-                    self.totals[userid][3][station] += 1
+                contribution_list = self.totals[userid][3]
+                if station in contribution_list:
+                    contribution_list[station] += 1
                 else:
-                    self.totals[userid][3][station] = 1
+                    contribution_list[station] = 1
 
-                self.totals[userid] = ( self.totals[userid][0], self.totals[userid][1] + 1, self.totals[userid][2], contributionList)
+                contribution_date_list = self.totals[userid][4]
+                if station in contribution_date_list:
+                    contribution_date_list[station].append(currmess.datestamp)
+                else:
+                    contribution_date_list[station] = [currmess.datestamp]
+
+                self.totals[userid] = ( self.totals[userid][0], self.totals[userid][1] + 1, self.totals[userid][2], contribution_list, contribution_date_list)
             else:
-                self.totals[userid] = ( currmess.date, 1, 0, {station: 1})
+                self.totals[userid] = ( currmess.date, 1, 0, {station: 1}, {station: [currmess.datestamp]})
 
     # now parse the actual messages -- date and body
     def parsemsgs(self,site_params):
@@ -372,7 +377,7 @@ class email_reader:
         if os.path.exists('../data/' + msg_station.upper() + '.csv'):
             indat = np.genfromtxt('../data/' + msg_station.upper() + '.csv',dtype=None,delimiter=',',names=True, encoding=None)
             datenum = np.atleast_1d(indat['POSIX_Stamp'])
-            len_indat = len(indat)
+            len_indat = indat.size
             # Loop through every entry
             for i in range(len_indat):
                 if datenum[i] == message.datestamp:
@@ -451,9 +456,10 @@ class email_reader:
                 firstrow = True
                 for user in totalreader:
                     if not firstrow:
-                        #print(user[4])f
                         contribution_dict_str = user[4].replace("-", ",").replace("\'", "\"")
-                        self.totals[user[0]] = (user[1] , int( user[2] ) , int( user[3] ), json.loads(contribution_dict_str))
+                        contribution_date_dict_str = user[5].replace("-", ",").replace("\'", "\"")
+
+                        self.totals[user[0]] = (user[1] , int( user[2] ) , int( user[3] ), json.loads(contribution_dict_str), json.loads(contribution_date_dict_str))
                     firstrow = False
                 totalfile.close()
            
@@ -464,11 +470,11 @@ class email_reader:
         """
         totalfile = open('../data/contributionTotals.csv','w')
             #print "writing to " + str( totalfile )
-        totalfile.write('contributorID,firstContributionDate,totalContributions,badContributions,validContributionsDict\n')
+        totalfile.write('contributorID,firstContributionDate,totalContributions,badContributions,validContributionsDict,validContributionsDateDict\n')
         for key in self.totals:
             #print key
             #print(self.totals[key][3])
-            totalfile.write( str( key ) + ',' + str( self.totals[key][0] ) + ',' + str( self.totals[key][1] ) + ',' + str( self.totals[key][2] )+ ',' + str( self.totals[key][3] ).replace(",", "-") + '\n' )
+            totalfile.write( str( key ) + ',' + str( self.totals[key][0] ) + ',' + str( self.totals[key][1] ) + ',' + str( self.totals[key][2] ) + ',' + str( self.totals[key][3] ).replace(",", "-") + ',' + str( self.totals[key][4] ).replace(",", "-") + '\n' )
         totalfile.close()
 
     def write_station_totals(self):
@@ -478,9 +484,9 @@ class email_reader:
         people who use consistenly for long periods of time, or do people conribute sparsely?
         Do power users burn out and get bored? These sorts of things.
         """
-        for g in self.data:
 
-            result = self.data[g]
+        for cg in self.stations:
+            result = self.data[cg]
             output = open( "../data/"+ str(result.gage) + "_StationTotals.csv", 'w' )
             all_results = list(zip( result.users, result.date, result.height, [result.gage]*len(result.users) ))
             for item in all_results:
