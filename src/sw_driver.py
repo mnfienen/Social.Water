@@ -4,6 +4,7 @@ from social_water import *
 import os
 import base64
 import sys
+import stats
 print('############################')
 print('#       Social.Water       #')
 print('#       Version 1.1        #')
@@ -57,7 +58,7 @@ if len(allmsg.msgids[0].split()) == 0:
 else:
     
     ##load up our old contributor data
-    
+
     print('parsing messages')
     # parse the messages
     allmsg.parsemail()
@@ -76,8 +77,12 @@ else:
     # plot the results usung dygraphs
     print('plot the results using dygraphs')
     allmsg.plot_results_dygraphs()
-    
-   
+
+    print('generate plotly contribution statistic graphs')
+    stats.create_user_contrib_num_pie_chart()
+    stats.create_user_station_contrib_bar_graph()
+    stats.create_date_of_contrib_line_graph()
+
     print('write out new contributor data')
     allmsg.write_contributions()
 
@@ -87,5 +92,4 @@ else:
     print("logging out!")
     allmsg.logout()
 
-    
 print('\nAll done for now!')
